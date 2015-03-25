@@ -7,6 +7,10 @@
 #include <QStringList>
 #include <QStringListModel>
 #include <QAbstractItemView>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QScriptEngine>
 
 class MainDB : QObject
 {
@@ -14,8 +18,13 @@ class MainDB : QObject
     QSqlDatabase db;
     QHash<QString, QString> tablesList;
     QSqlQueryModel queryMainViewModel;
+
+    //format is 2014-12-01
+    const QString fetch_date_format = "yyyy-MM-dd";
+
     bool db_open;
 
+    //TODO: refactor constructor's implementation into header file
     public:
     MainDB(QObject *parent=0, QString dbpath=""):QObject(parent=0)
     {
@@ -40,23 +49,12 @@ class MainDB : QObject
         db_open = db.open();
 
     }
-    QSqlQueryModel* getMainViewModel()
-    {
-            return &queryMainViewModel;
-    }
+    QSqlQueryModel* getMainViewModel();
 
 
-    int setDatabaseName(QString newName="")
-    {
-        if(newName.size()>0)
-            db.setDatabaseName(newName);
-        return 0;
-    }
+    int setDatabaseName(QString newName);
 
-    QStringListModel* getTablesListModel()
-    {
-        return new QStringListModel(tablesList.keys());
-    }
+    QStringListModel* getTablesListModel();
 
     /*
      * updates mainViewModel with values from tableName
@@ -64,46 +62,21 @@ class MainDB : QObject
      *
      * On error returns -1
      * */
-    int updateMainViewModel(QString tableName)
-    {
-        if(tablesList.keys().contains(tableName) && db_open)
-        {
-            //Actual name of the table in db
-            QString db_tableName = tablesList[tableName];
+    int updateMainViewModel(QString tableName);
 
-            //value is the sql thing, so can't bind table name
-            //http://stackoverflow.com/questions/15902859/qsqlquery-with-prepare-and-bindvalue-for-column-name-sqlite
-            QString sqlStatement =
-                QString("SELECT si.index_id as ID, si.name AS Name, t.date, t.value  FROM %1 t INNER JOIN sp_index si ON "
-                    "si.index_id = t.index_id").arg(db_tableName);
+    /*
+     *
+     * Simply update database file by fetching new
+     * data from yahoo.finance and running some insert queries
+     *
+     * On error returns -1
+     * */
+    int fetch_index_json_data(QString quote, QDate start_date, QDate end_date);
 
+    int updateDataBase();
 
-            QSqlQuery q(sqlStatement, db);
-            q.exec();
-
-            queryMainViewModel.setQuery(q);
-
-        return 0;
-
-
-        }
-        else
-        {
-            return -1;
-        }
-
-    }
-
-
-    int updateDataBase()
-    {
-        //TODO: write actual update db code
-
-        return -1;
-
-    }
-
-
+    void on_QNetworkReplyResult(QNetworkReply *reply);
 
 
 };
+

@@ -86,22 +86,5 @@
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
- <connections>
-  <connection>
-   <sender>btnUpdateAll</sender>
-   <signal>clicked()</signal>
-   <receiver>btnUpdateAll</receiver>
-   <slot>click()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>802</x>
-     <y>450</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>805</x>
-     <y>452</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>
