@@ -71,9 +71,15 @@ class MainDB : QObject
      *
      * On error returns -1
      * */
-    int fetch_index_json_data(QString quote, QDate start_date, QDate end_date);
+    QScriptValue fetch_index_json_data(QString quote, QDate start_date, QDate end_date);
 
-    int updateDataBase();
+    /*
+     *	Return the latest date entered into the database's data tables
+     * */
+    QString get_latest_date();
+
+
+    int updateDatabase();
 
     void on_QNetworkReplyResult(QNetworkReply *reply);
 

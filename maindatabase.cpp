@@ -44,8 +44,6 @@ int MainDB::updateMainViewModel(QString tableName)
         queryMainViewModel.setQuery(q);
 
     return 0;
-
-
     }
     else
     {
@@ -56,12 +54,12 @@ int MainDB::updateMainViewModel(QString tableName)
 
     /*
      *
-     * Simply update database file by fetching new
+     * update database file by fetching new
      * data from yahoo.finance and running some insert queries
      *
      * On error returns -1
      * */
-int MainDB::fetch_index_json_data(QString quote, QDate start_date, QDate end_date)
+QScriptValue MainDB::fetch_index_json_data(QString quote, QDate start_date, QDate end_date)
 {
 
     //TODO: refactor this into separate class dataManager?
@@ -90,22 +88,35 @@ int MainDB::fetch_index_json_data(QString quote, QDate start_date, QDate end_dat
     QNetworkRequest request(url);
 
     //TODO: remove curentreply, only leave get(request)?
-    QNetworkReply *currentReply = nManager.get(request); //GET
-    connect(&nManager, SIGNAL(finished(QNetworkReply *)),this , SLOT(on_QNetworkReplyResult));
+    QNetworkReply *currentReply; //GET
+    currentReply =nManager.get(request);
+//    connect(&nManager, SIGNAL(finished(QNetworkReply *)),this , SLOT(on_QNetworkReplyResult));
 
+    QString data = (QString) currentReply->readAll();
+    QScriptEngine engine;
+    QScriptValue result = engine.evaluate(data);
 
-    return 0;
+    return result;
 }
 
+int MainDB::updateDatabase()
+{
+    //	find the latest entry date and set it as start_date
+    //	set end_date to today
+    //	for every company in sp500
+        //	fetch_data as json obj
+        //	take out the needed data from json obj
+        //	run sql queries to insert new data into db
 
-int MainDB::updateDataBase()
-    {
+    //TODO: check if tables exists, if not,  create them
 
-        //TODO: how to update?
 
-        return 0;
+    //find the earliest of latest dates throught all `data` tables
 
-    }
+
+return 0;
+
+}
 
 void MainDB::on_QNetworkReplyResult(QNetworkReply *reply)
 {
@@ -123,3 +134,40 @@ void MainDB::on_QNetworkReplyResult(QNetworkReply *reply)
 
 
 }
+
+QString MainDB::get_latest_date()
+{
+    //TODO: rewrite so that latest date is kept somewhere in a table and is
+    //			updated along with data
+
+     QString sqlStatement =
+        QString(
+        "drop table if exists tables_maxes;"
+        "create table tables_maxes("
+        "max integer);"
+
+        "insert into tables_maxes(max) select max(date) from sp_adj_close;"
+        "insert into tables_maxes(max) select max(date) from sp_high;"
+        "insert into tables_maxes(max) select max(date) from sp_index_adj_close;"
+        "insert into tables_maxes(max) select max(date) from sp_index_close;"
+        "insert into tables_maxes(max) select max(date) from sp_index_high;"
+        "insert into tables_maxes(max) select max(date) from sp_index_low;"
+        "insert into tables_maxes(max) select max(date) from sp_index_open;"
+        "insert into tables_maxes(max) select max(date) from sp_index_volume;"
+        "insert into tables_maxes(max) select max(date) from sp_low;"
+        "insert into tables_maxes(max) select max(date) from sp_open;"
+        "insert into tables_maxes(max) select max(date) from sp_volume;"
+
+        "select max(max) from tables_maxes; drop table if exists tables_maxes;"
+        );
+
+        QSqlQuery q(sqlStatement, db);
+        QString result_max="";
+        while(q.next())
+        {
+            result_max = q.value(0).toString();
+        }
+        return result_max;
+
+}
+

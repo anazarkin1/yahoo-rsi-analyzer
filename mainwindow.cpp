@@ -44,8 +44,8 @@ void MainWindow::on_lvTablesList_clicked(const QModelIndex &index)
 
 void MainWindow::on_btnUpdateAll_clicked()
 {
-    //TODO: Clicking on button crashes the program, problem is in the slot-signal stuff
-    if (dbManager.updateDataBase() !=0 )
+    qDebug()<<"in here";
+    if (dbManager.updateDatabase() !=0 )
     {
         //TODO: Handle error
     }
