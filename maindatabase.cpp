@@ -66,15 +66,20 @@ QScriptValue MainDB::fetch_index_json_data(QString quote, QDate start_date, QDat
     QNetworkAccessManager nManager;
     QUrl url("http://query.yahooapis.com/v1/public");
     QString method = "yql";
-    url.setPath( QString("%1%2").arg(url.path()).arg(method) );
+    url.setPath( QString("%1/%2").arg(url.path()).arg(method) );
 
     QString str_start_date=start_date.toString(fetch_date_format);
     QString str_end_date=end_date.toString(fetch_date_format);
 
+
+
+    //constructing yql query
     QMap<QString, QVariant>params;
-    params["q"]=QString("SELECT * FROM yahoo.finance.historicaldata WHERE symbol =%1 AND startDate=%2 AND endDate=%3").arg(quote).arg(str_start_date).arg(str_end_date);
     params["evn"]=QString("store://datatables.org/alltableswithkeys");
     params["format"]=QString("json");
+    params["q"]=QUrl::toPercentEncoding(
+    QString("SELECT*FROM yahoo.finance.historicaldata WHERE symbol='%1' AND startDate='%2' AND endDate='%3'").arg(quote).arg(str_start_date).arg(str_end_date)
+    );
 
     //Used to place params in the url
     QUrlQuery urlQuery;
@@ -83,6 +88,7 @@ QScriptValue MainDB::fetch_index_json_data(QString quote, QDate start_date, QDat
 
     //reconstruct url from url and set params from urlquery
     url.setQuery(urlQuery);
+    qDebug() <<start_date.toString()<< url.toString();
 
 
     QNetworkRequest request(url);
@@ -110,8 +116,37 @@ int MainDB::updateDatabase()
 
     //TODO: check if tables exists, if not,  create them
 
+    QVector<QString> sp_companies = this->get_list_sp_companies();
 
     //find the earliest of latest dates throught all `data` tables
+    QString start_date = get_latest_date();
+//    QString end_date = QDate::currentDate().toString(fetch_date_format);
+    QDate end_date;
+    end_date = QDate::fromString(start_date);
+
+//    foreach(QString company, sp_companies)
+//    {
+
+//        while(end_date<= QDate::currentDate())
+//        {
+            QScriptValue res = fetch_index_json_data(sp_companies[1], end_date, end_date.addYears(1));
+//            QScriptValueIterator it(res);
+//            while(it.hasNext())
+//            {
+//                it.next();
+//            }
+            qDebug()<<res.toString();
+
+//        }
+//    }
+
+
+
+
+//    insert_new_data_row("hui", t,v);
+//    QScriptValue res = fetch_index_json_data()
+
+    //insert newly received data into the database
 
 
 return 0;
@@ -135,39 +170,108 @@ void MainDB::on_QNetworkReplyResult(QNetworkReply *reply)
 
 }
 
-QString MainDB::get_latest_date()
+    int MainDB::insert_new_data_row(QString tableName, QVector<QString> columnsNames, QVector<QString> values)
+{
+    QString str=QString("INSERT INTO %1 (").arg(tableName);
+
+    //basically i want to generate sql statement for any table with any
+    //number of columns.
+
+
+    //TODO: rewrite with foreach loop and make use of prepared statements
+    for (int i =0; i < columnsNames.length(); i++)
+    {
+        //if the last element to be added
+        //don't add trailing ',' but add ')'
+        if (i==columnsNames.length()-1)
+        {
+            str+=columnsNames[i];
+            str+=") values(";
+        }
+        else
+        {
+            str+=columnsNames[i];
+            str+=",";
+        }
+    }
+
+    for (int i =0 ; i < values.length(); i++)
+    {
+        if (i==values.length()-1)
+        {
+         str+="'"+values[i]+"')";
+        }
+        else
+        {
+         str+="'"+values[i]+"',";
+
+        }
+    }
+
+    QSqlQuery q(str, db);
+    q.exec();
+
+
+    //TODO: check errors and return approp return values
+    return 0;
+}
+
+
+ QString MainDB::get_latest_date()
 {
     //TODO: rewrite so that latest date is kept somewhere in a table and is
     //			updated along with data
 
-     QString sqlStatement =
-        QString(
-        "drop table if exists tables_maxes;"
-        "create table tables_maxes("
-        "max integer);"
 
-        "insert into tables_maxes(max) select max(date) from sp_adj_close;"
-        "insert into tables_maxes(max) select max(date) from sp_high;"
-        "insert into tables_maxes(max) select max(date) from sp_index_adj_close;"
-        "insert into tables_maxes(max) select max(date) from sp_index_close;"
-        "insert into tables_maxes(max) select max(date) from sp_index_high;"
-        "insert into tables_maxes(max) select max(date) from sp_index_low;"
-        "insert into tables_maxes(max) select max(date) from sp_index_open;"
-        "insert into tables_maxes(max) select max(date) from sp_index_volume;"
-        "insert into tables_maxes(max) select max(date) from sp_low;"
-        "insert into tables_maxes(max) select max(date) from sp_open;"
-        "insert into tables_maxes(max) select max(date) from sp_volume;"
 
-        "select max(max) from tables_maxes; drop table if exists tables_maxes;"
-        );
+    //QSQL can't run milti-lined sql statemnt;
+     QString sqlStatement ="";
+     QVector<QString> statement_list;
+        statement_list.push_back("drop table if exists tables_maxes;");
+        statement_list.push_back("create table tables_maxes(max integer);");
 
-        QSqlQuery q(sqlStatement, db);
-        QString result_max="";
-        while(q.next())
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_adj_close;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_high;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_index_adj_close;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_index_close;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_index_high;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_index_low;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_index_open;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_index_volume;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_low;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_open;");
+        statement_list.push_back("insert into tables_maxes(max) select max(date) from sp_volume;");
+
+
+        foreach(QString sqlquery, statement_list)
         {
-            result_max = q.value(0).toString();
+            QSqlQuery q(sqlquery, db);
+            q.exec();
+
         }
-        return result_max;
+
+
+        QSqlQuery q("select max(max) from tables_maxes;", db);
+        q.next();
+        return q.value(0).toString();
 
 }
 
+
+ QVector<QString> MainDB::get_list_sp_companies()
+{
+
+    QVector<QString> sp_companies;
+    QString sqlStatement = QString(
+    "SELECT name FROM sp_index;"
+    );
+
+    QSqlQuery q(sqlStatement,db);
+
+    while(q.next())
+    {
+        sp_companies.push_back(q.value(0).toString());
+    }
+        return sp_companies;
+
+}

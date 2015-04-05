@@ -11,6 +11,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QScriptEngine>
+#include <QScriptValueIterator>
 
 class MainDB : QObject
 {
@@ -79,10 +80,33 @@ class MainDB : QObject
     QString get_latest_date();
 
 
+    /*
+     *
+     *
+     * */
+    int insert_new_data_row(QString tableName, QVector<QString> columnsNames, QVector<QString> values);
+
+    /*
+     *
+     *
+     * */
     int updateDatabase();
 
+
+    /*
+     *
+     *
+     *
+     * */
     void on_QNetworkReplyResult(QNetworkReply *reply);
 
+
+    /*
+     *	Get a list of tickets for S&P companies from the db (sp_index table)
+     *
+     * */
+
+     QVector<QString> get_list_sp_companies();
 
 };
 
