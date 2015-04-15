@@ -1,16 +1,15 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "maindatabase.h"
 
 const QString PATH ="/home/alex/Dropbox/Projects/Python/spindex_download/sp.db";
-MainDB dbManager(0,PATH);
+//MainDB dbManager(0,PATH);
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->lvTablesList->setModel(dbManager.getTablesListModel());
-//    ui->tvMainView->setModel(dbManager.getTableData());
+//    ui->lvTablesList->setModel(dbManager.getTablesListModel());
+////    ui->tvMainView->setModel(dbManager.getTableData());
 
 
     /*
@@ -35,8 +34,8 @@ void MainWindow::on_lvTablesList_clicked(const QModelIndex &index)
 
     //Can update mainView through functions such as
     //updateMainViewModel()
-    ui->tvMainView->setModel(dbManager.getMainViewModel());
-    dbManager.updateMainViewModel(index.data().toString());
+//    ui->tvMainView->setModel(dbManager.getMainViewModel());
+//    dbManager.updateMainViewModel(index.data().toString());
 
 
 }
@@ -44,10 +43,5 @@ void MainWindow::on_lvTablesList_clicked(const QModelIndex &index)
 
 void MainWindow::on_btnUpdateAll_clicked()
 {
-    qDebug()<<"in here";
-    if (dbManager.updateDatabase() !=0 )
-    {
-        //TODO: Handle error
-    }
 
 }
