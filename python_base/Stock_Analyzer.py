@@ -1,8 +1,9 @@
-import os
-import sys
-from Yahoo_Parser import YahooParser
 from operator import itemgetter
 import math
+
+from Yahoo_Parser import YahooParser
+
+
 
 # used to sort dates
 from datetime import datetime
@@ -171,7 +172,7 @@ class StockAnalyzer:
             If want to get best performeres by cashflow growth for number of
             consecutive periods call get_best_cashflow_performers_consec_periods()
         """
-        stock_list_to_work=self.stock_list[:40]
+        stock_list_to_work = self.stock_list[:]
 
         # array of dicts, each dict's keys are quotes and values are growth for this quote for this period,
         # array's indecies correspond to periods for which growths are calculated

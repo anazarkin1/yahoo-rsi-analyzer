@@ -1,13 +1,13 @@
+import re
+
 from bs4 import BeautifulSoup
 import requests
-import datetime
-import re, string
+
 #Using zip instead of izip since izip gives an error for some reason
 #used for itertools.izip as it is said to be more memory efficient than zip
 #http://stackoverflow.com/questions/209840/map-two-lists-into-a-dictionary-in-python
-import itertools
 import json
-from operator import itemgetter
+
 
 class YahooParser:
     def __init__(self):
@@ -73,6 +73,8 @@ class YahooParser:
         dates=[]
         try:
             table = soup.find('table', attrs={'class':'yfnc_tabledata1'})
+            if table is None:
+                raise ValueError("Exception Caught: can't find table tr(Probably no cashflow information) for " + quote)
             rows = table.find_all('tr')
         except Exception as e:
             raise ValueError("Exception Caught: can't find table tr(Probably no cashflow information) for "+quote+" error:",e)
