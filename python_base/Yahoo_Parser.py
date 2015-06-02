@@ -7,11 +7,10 @@ import requests
 #used for itertools.izip as it is said to be more memory efficient than zip
 #http://stackoverflow.com/questions/209840/map-two-lists-into-a-dictionary-in-python
 import json
-
-
+from datetime import timedelta
 class YahooParser:
     def __init__(self):
-        pass
+        self.num_stocks_per_req = 40
 
     def _get_json_obj(self,data):
         return json.loads(data)
@@ -26,7 +25,20 @@ class YahooParser:
         else:
             quote_list_str = str(tuple(quote_list))
 
-        base_query= "http://query.yahooapis.com/v1/public/yql?q=select * from yahoo.finance.historicaldata where symbol in"+quote_list_str+" and startDate ='"+required_date+"' and endDate = '"+required_date+"'&env=store://datatables.org/alltableswithkeys&format=json"
+        try:
+            # get the friday's data if required date happens to be weekend
+            while required_date.isoweekday() in (6, 7):
+                # timedelta(1) equals to 1 day
+                required_date -= timedelta(1)
+
+            # Date format used for yql : "YYYY-MM-DD" also called isoformat
+            required_date_str = required_date.isoformat()
+        except Exception as e:
+            print("Exception caught while getting required_date string with error:, ", e)
+
+        base_query = "http://query.yahooapis.com/v1/public/yql?q=select * from yahoo.finance.historicaldata where " \
+                     "symbol in" + quote_list_str + " and startDate ='" + required_date_str + "' and endDate = " \
+                                                                                              "'" + required_date_str + "'&env=store://datatables.org/alltableswithkeys&format=json"
         try:
             r = requests.get(base_query)
             jo = self._get_json_obj(r.text)
@@ -34,18 +46,14 @@ class YahooParser:
             print("Exception Caught at Yahoo_Parser at requests.get(), ",e)
         output={}
 
-
-        if len(quote_list)>1:
-            for i in jo["query"]["results"]['quote']:
-                try:
-                    output[i['Symbol']]=float(i['Close'])
-                except Exception as e:
-                    print("Exception Caught: ", e)
-        else:
-            try:
-                output[jo["query"]["results"]['quote']['Symbol']]=float(jo["query"]["results"]["quote"]["Close"])
-            except Exception as e:
-                print("Exception Caught: ", e)
+        try:
+            if len(quote_list) > 1:
+                for i in jo["query"]["results"]['quote']:
+                    output[i['Symbol']] = float(i['Close'])
+            else:
+                output[jo["query"]["results"]['quote']['Symbol']] = float(jo["query"]["results"]["quote"]["Close"])
+        except Exception as e:
+            print("Exception Caught: ", e)
         return output
 
 
@@ -91,10 +99,20 @@ class YahooParser:
                     dates=cols[1:]
 
 
+
         #Regex used to remove '(',')' from cash flow numbers, since
-        #some of them are presented in this way, ex: (3,911)
+        # negative values are placed inside '(', ')'
+        #we want negatives to be in format '-value' to be used in calculations
         regex = re.compile('[(-,)]')
         for i in range(0,len(data)):
+            neg = False
+            if '(' in data[i]:
+                neg =True
             data[i]=regex.sub('', str(data[i]))
+            data[i] = float(data[i])
+
+            if neg:
+                data[i]*=-1
+
 
         return dict(zip(dates, data))
