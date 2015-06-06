@@ -71,6 +71,14 @@ class StockAnalyzer:
 
         return output
 
+    def _calculate_price_growth_all(self, quote_list):
+
+        output={}
+
+        req_date=datetime(2014,3,28)
+        return self.yp.scrape_stock_price(quote_list, req_date)
+
+
     def _calculate_cashflow_growth_all(self, quote_list):
         """
         Receives a list of quotes to scrape cashflow info on
@@ -155,10 +163,6 @@ class StockAnalyzer:
             print("Exception caught while figuring out what companies are top in consecutive periods with error, ", e)
 
         return candidate_symbols_array
-
-
-
-
     def get_best_cashflow_performers_by_period(self,best_percentage=.3, all_cashflow_data=None):
         """
             Receives best_percentage = (100-percentage*100) % of other NYSE stocks a
@@ -228,6 +232,20 @@ class StockAnalyzer:
         return periods
 
 
+    def get_best_return_performers_by_period(self, best_percentage=.3, all_price_data=None):
+        stock_list_to_work=self.stock_list[:100]
+        periods=[]
+
+        try:
+            if all_price_data == None:
+                all_price_data = self._calculate_price_growth_all(stock_list_to_work)
+        except Exception as e:
+            print("Exception caught at _calculate_price_growth_all with error:", e)
+
+
+
+    def get_best_return_performers_consec_periods(self,best_percentage,numb_consec_periods):
+        return
 
 
 
