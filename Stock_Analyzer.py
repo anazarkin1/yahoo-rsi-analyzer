@@ -1,8 +1,9 @@
 from operator import itemgetter
 import math
 
+from TimeHandler import *
+
 from Yahoo_Parser import YahooParser
-import json
 
 
 # used to sort dates
@@ -18,19 +19,6 @@ class StockAnalyzer:
         # number of cash flow data quarters to compare every stock for
         self.num_periods_toanalyze_cashflow=3
 
-    def get_string_to_date_object(self, str_to_parse, format_string="%b %d %Y"):
-        return datetime.strptime(str_to_parse, format_string)
-
-    def get_sorted_dates_array(self, array_to_sort, reverse=False):
-        dates_to_sort=[]
-        for date_to_sort in array_to_sort:
-            dates_to_sort.append(self.get_string_to_date_object(date_to_sort))
-        return sorted(dates_to_sort, reverse=reverse)
-
-    def get_date_to_string(self, time_object, format_string="%b %d %Y"):
-        # NOTE: Yahoo uses dates in format "Dec 1 2012", not "Dec 01 2012"
-        # that's why we replace ' 0' with ' '
-        return time_object.strftime(format_string).replace(' 0', ' ')
 
     def load_nyse_stock_list(self, nyse_stock_list_file="nyse_stock_list.txt"):
         """
@@ -53,12 +41,12 @@ class StockAnalyzer:
         output={}
 
         reverse=True
-        sorted_dates = self.get_sorted_dates_array(cashflow_info.keys(), reverse)
+        sorted_dates = th.get_sorted_dates_array(cashflow_info.keys(), reverse)
         for i in range(0,len(sorted_dates)-1):
             try:
                 # previous date actually is next one in the array since it's sorted in non-asc order
-                str_date_start = self.get_date_to_string(sorted_dates[i+1])
-                str_date_end = self.get_date_to_string(sorted_dates[i])
+                str_date_start = get_date_to_string(sorted_dates[i+1])
+                str_date_end = get_date_to_string(sorted_dates[i])
 
                 if  float(cashflow_info[str_date_start]) != 0:
                     output[str_date_end]=round( ( float(cashflow_info[str_date_end]) - float(cashflow_info[str_date_start]) ) / float(cashflow_info[str_date_start]), self.decimal_places )
