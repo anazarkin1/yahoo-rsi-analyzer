@@ -8,6 +8,7 @@ class DataManager:
         # ex: 'operating Activities', 'free',...
         self._cashflow_types = []
         self.load_all_cashflow()
+        self._data_prices=""
 
     def load_all_cashflow(self, filename="Data/cashflow.json"):
         try:
@@ -18,7 +19,7 @@ class DataManager:
                     self._data_cashflow["cashflow"]={}
 
                 self._cashflow_types=list(self._data_cashflow["cashflow"].keys())
-                return self._data_cashflow
+                return self._data_cashflow.copy()
         except Exception as e:
             print("Exception caught while loading cashflow.json with error:", e)
             return None
@@ -87,3 +88,45 @@ class DataManager:
     @property
     def cashflow_types(self):
         return self.cashflow_types
+
+    def get_prices_all_dates(self, cashflow_type, stock):
+
+        try:
+           if "prices" not in self._data_prices.keys() or stock not in self._data_prices["prices"].keys():
+               return {}
+           if len(self._data_prices["prices"][stock])==0:
+               return {}
+
+           return self._data_prices["prices"][stock]
+        except Exception as e:
+            print("Exception, while getting prices data from json file for "+stock+" with error:",e)
+
+
+    def save_prices_single(self,stock, date, value, overwrite=True,filename="Data/prices.json"):
+        value=float(value)
+
+        try:
+            date_str=get_date_to_string(date)
+        except Exception as e:
+            print("Exception, converting date to string for prices with error:",e)
+
+        try:
+            if "prices" not in self._data_prices.keys():
+                self._data_prices["prices"]={}
+            if stock not in self._data_prices["prices"].keys():
+                self._data_prices["prices"][stock]={}
+            if (date_str not in self._data_prices["prices"][stock].keys() or overwrite):
+                self._data_prices["prices"][stock][date_str]=value
+                with open(filename,'w') as file:
+                    file.write(json.dumps(self._data_prices,file, indent=4))
+        except Exception as e:
+            print ("Exception,saving single prices item for " +stock+" on date "+date_str+" with "
+                                                                                                         "error:", e)
+
+    def load_all_prices(self,filename="Data/prices.json"):
+        try:
+            with open(filename) as file:
+                self._data_prices = json.load(file)
+                return self._data_prices.copy()
+        except Exception as e:
+            print("Exception, loading prices.json with error:",e)
