@@ -72,7 +72,7 @@ class StockAnalyzer:
         return self.yp.scrape_stock_price(quote_list, req_date)
 
 
-    def _calculate_cashflow_growth_all(self, quote_list, overwrite_file, cashflow_type="operating_activities"):
+    def _calculate_cashflow_growth_all(self, quote_list, overwrite_file, cashflow_type="operating activities"):
         """
         Receives a list of quotes to scrape cashflow info on
 
