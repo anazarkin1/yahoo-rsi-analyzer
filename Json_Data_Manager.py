@@ -33,10 +33,11 @@ class DataManager:
         is available
         format: {"Date1":121324.1, "Date2":1256.9}
         '''
+        cashflow_type=cashflow_type.lower()
 
         try:
             if "cashflow" not in self._data_cashflow.keys() or cashflow_type not in self._data_cashflow[
-                "cashflow"].keys or stock not in self._data_cashflow[cashflow][cashflow_type].keys():
+                "cashflow"].keys() or stock not in self._data_cashflow["cashflow"][cashflow_type].keys():
                 return None
             if len(self._data_cashflow["cashflow"][cashflow_type][stock])==0:
                 return None
