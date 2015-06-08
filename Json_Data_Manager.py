@@ -7,6 +7,7 @@ class DataManager:
         # list of types of cashflow available from json file
         # ex: 'operating Activities', 'free',...
         self._cashflow_types = []
+        self.load_all_cashflow()
 
     def load_all_cashflow(self, filename="Data/cashflow.json"):
         try:
@@ -20,6 +21,28 @@ class DataManager:
                 return self._data_cashflow
         except Exception as e:
             print("Exception caught while loading cashflow.json with error:", e)
+            return None
+
+
+    def get_cashflow_all_dates(self,cashflow_type, stock ):
+        '''
+
+        :param cashflow_type: a type of cashflow from self._cashflow_types
+        :param stock: stock name
+        :return: all available cashflow data of specified type from cashflow.json on this stock. Return None if nothing
+        is available
+        format: {"Date1":121324.1, "Date2":1256.9}
+        '''
+
+        try:
+            if "cashflow" not in self._data_cashflow.keys() or cashflow_type not in self._data_cashflow[
+                "cashflow"].keys or stock not in self._data_cashflow[cashflow][cashflow_type].keys():
+                return None
+            if len(self._data_cashflow["cashflow"][cashflow_type][stock])==0:
+                return None
+            return self._data_cashflow["cashflow"][cashflow_type][stock].copy()
+        except Exception as e:
+            print("Exception caught while getting cashflow data from json file for "+stock+" with error:",e)
             return None
 
     def save_cashflow_single(self,cashflow_type, stock, date, value, overwrite=True, filename="Data/cashflow.json"):
