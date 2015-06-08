@@ -24,6 +24,9 @@ class StockAnalyzer:
         # number of cash flow data quarters to compare every stock for
         self.num_periods_toanalyze_cashflow=3
 
+        #number of prices months to compare every stock for
+        self.num_periods_toanalyze_prices=8
+
 
     def load_nyse_stock_list(self, nyse_stock_list_file="nyse_stock_list.txt"):
         """
@@ -237,16 +240,58 @@ class StockAnalyzer:
     def get_best_prices_performers_by_period(self, overwrite,  best_percentage=.3,all_price_data=None):
         stock_list_to_work=self.stock_list[:100]
         periods=[]
+        try:
+            if all_price_data is None:
+                all_price_data=self._calculate_price_growth_all(stock_list_to_work)
+        except Exception as e:
+            print("Exception, at _calculate_prices_growth_all, with error:",e)
 
         try:
-            if all_price_data == None:
-                all_price_data = self._calculate_price_growth_all(stock_list_to_work)
+            symbols=all_price_data.keys()
+            for i in range(0,self.num_periods_toanalyze_prices):
+                periods.append([])
+
+            for symbol in symbols:
+                reverse=True
+
+                sorted_dates=get_sorted_dates_array(all_price_data[symbol].keys(),reverse)
+                if len(sorted_dates) < 2:
+                    print("***Less than 2 dates for ", symbol, ". Cannot analyze.")
+                    continue
+
+                num_periods=0
+                if self.num_periods_toanalyze_prices<len(sorted_dates):
+                    num_periods=self.num_periods_toanalyze_prices
+                else:
+                    num_periods=len(sorted_dates)
+
+                for i in range(0,num_periods):
+                    str_date=get_date_to_string(sorted_dates[i])
+                    value_for_date=all_price_data[symbol][str_date]
+                    periods[i].append({"stock":symbol, "price_growth":value_for_date, "date_reported":str_date})
         except Exception as e:
-            print("Exception caught at _calculate_price_growth_all with error:", e)
+            print("Exception, at get_best_prices_performers_by_period() while combining companies' performances into "
+                  "periods array, with error:",e)
+
+        try:
+            for i in range(0, len(periods)):
+                cut_number=math.ceil(len(periods[i])*best_percentage)
+                periods[i]=sorted( periods[i], key=itemgetter('price_growth'), reverse=True )[:cut_number]
+        except Exception as e:
+            print("Exception, at _calculate_prices_growth_all() performing periods sort with cutting off worst "
+                  "performers, with error:",e)
+
 
 
 
     def get_best_prices_performers_consec_periods(self,best_percentage,numb_consec_periods, overwrite):
+        self.num_periods_toanalyze_prices=numb_consec_periods
+
+        try:
+            periods=self.get_best_prices_performers_by_period(overwrite=overwrite,best_percentage=best_percentage)
+        except Exception as e:
+            print("Exception, get_best_prices_performers_by_periods() with error:", e)
+
         return
 
 
