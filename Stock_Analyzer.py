@@ -234,7 +234,7 @@ class StockAnalyzer:
         return periods
 
 
-    def get_best_return_performers_by_period(self, best_percentage=.3, all_price_data=None):
+    def get_best_prices_performers_by_period(self, overwrite,  best_percentage=.3,all_price_data=None):
         stock_list_to_work=self.stock_list[:100]
         periods=[]
 
@@ -246,7 +246,7 @@ class StockAnalyzer:
 
 
 
-    def get_best_return_performers_consec_periods(self,best_percentage,numb_consec_periods):
+    def get_best_prices_performers_consec_periods(self,best_percentage,numb_consec_periods, overwrite):
         return
 
 
