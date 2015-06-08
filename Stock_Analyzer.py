@@ -4,11 +4,12 @@ import math
 from TimeHandler import *
 
 from Yahoo_Parser import YahooParser
-# from Json_Data_Manager import
+from Json_Data_Manager import DataManager
 
 
 # used to sort dates
 from datetime import datetime
+
 
 class StockAnalyzer:
     def __init__(self, nyse_stock_list_file="nyse_stock_list.txt"):
@@ -16,6 +17,8 @@ class StockAnalyzer:
         self.load_nyse_stock_list(nyse_stock_list_file)
         self.decimal_places=4
         self.yp = YahooParser()
+        self.dm = DataManager()
+
 
 
         # number of cash flow data quarters to compare every stock for
@@ -69,7 +72,7 @@ class StockAnalyzer:
         return self.yp.scrape_stock_price(quote_list, req_date)
 
 
-    def _calculate_cashflow_growth_all(self, quote_list):
+    def _calculate_cashflow_growth_all(self, quote_list, overwrite_file, cashflow_type="operating_activities"):
         """
         Receives a list of quotes to scrape cashflow info on
 
@@ -77,6 +80,7 @@ class StockAnalyzer:
         dictonary inside this array keys are dates and values are growth_rates(basically just output from
             _calculate_cashflow_growth())
         """
+        cashflow_type=cashflow_type.lower()
 
         output={}
         i=1
@@ -84,7 +88,15 @@ class StockAnalyzer:
             print(quote, i,"/",len(quote_list))
             i+=1
             try:
-                cashflow_info = self.yp.scrape_total_cashflow(quote)
+                if overwrite_file==True or len(self.dm.get_cashflow_all_dates(cashflow_type,quote))==0 :
+                    cashflow_info = self.yp.scrape_total_cashflow(quote)
+
+                    #save to json file
+                    for date_str, value in cashflow_info.items():
+                        date=get_string_to_date_object(date_str)
+                        self.dm.save_cashflow_single(cashflow_type,quote,date,value)
+                else:
+                    cashflow_info = self.dm.get_cashflow_all_dates(cashflow_type,quote)
             except Exception as e:
                 print('Exception caught while scraping total cashflow for ',quote,' with error' ,e)
 
@@ -94,7 +106,7 @@ class StockAnalyzer:
                 print('Exception caught while calculating cashflow growth() for ', quote, ' with error: ',e)
 
         return output
-    def get_best_cashflow_performers_consec_periods(self, best_percentage, numb_consec_periods):
+    def get_best_cashflow_performers_consec_periods(self, best_percentage, numb_consec_periods, overwrite_file):
         """
             Receives best_percentage = (100-percentage*100) % of other NYSE stocks a
             stock has to outperform,
@@ -112,8 +124,8 @@ class StockAnalyzer:
         self.num_periods_toanalyze_cashflow = numb_consec_periods
 
         try:
-            periods=self.get_best_cashflow_performers_by_period(best_percentage)
-        except:
+            periods=self.get_best_cashflow_performers_by_period(best_percentage, overwrite_file)
+        except Exception as e:
             print("Exception caught get_best_cashflow_performers_consec_periods() while \
              performing get_best_cashflow_performers_by_period(), with error :", e)
 
@@ -153,7 +165,7 @@ class StockAnalyzer:
             print("Exception caught while figuring out what companies are top in consecutive periods with error, ", e)
 
         return candidate_symbols_array
-    def get_best_cashflow_performers_by_period(self,best_percentage=.3, all_cashflow_data=None):
+    def get_best_cashflow_performers_by_period(self,overwrite_file, best_percentage=.3, all_cashflow_data=None):
         """
             Receives best_percentage = (100-percentage*100) % of other NYSE stocks a
             stock has to outperform
@@ -173,8 +185,8 @@ class StockAnalyzer:
         periods=[]
 
         try:
-            if all_cashflow_data==None:
-                all_cashflow_data =self._calculate_cashflow_growth_all(stock_list_to_work)
+            if all_cashflow_data is None:
+                all_cashflow_data =self._calculate_cashflow_growth_all(stock_list_to_work, overwrite_file=overwrite_file)
         except Exception as e:
             print("Exception caught at _calculate_cashflow_growth_all with error :", e)
 

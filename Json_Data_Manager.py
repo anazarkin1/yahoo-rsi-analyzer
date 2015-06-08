@@ -17,7 +17,7 @@ class DataManager:
                 if "cashflow" not in  self._data_cashflow.keys():
                     self._data_cashflow["cashflow"]={}
 
-                self._cashflow_types=self._data_cashflow["cashflow"].keys()
+                self._cashflow_types=list(self._data_cashflow["cashflow"].keys())
                 return self._data_cashflow
         except Exception as e:
             print("Exception caught while loading cashflow.json with error:", e)
