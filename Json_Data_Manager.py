@@ -29,8 +29,8 @@ class DataManager:
 
         :param cashflow_type: a type of cashflow from self._cashflow_types
         :param stock: stock name
-        :return: all available cashflow data of specified type from cashflow.json on this stock. Return None if nothing
-        is available
+        :return: all available cashflow data of specified type from cashflow.json on this stock. Return empty dict {} if
+        nothing is available
         format: {"Date1":121324.1, "Date2":1256.9}
         '''
         cashflow_type=cashflow_type.lower()
@@ -38,9 +38,9 @@ class DataManager:
         try:
             if "cashflow" not in self._data_cashflow.keys() or cashflow_type not in self._data_cashflow[
                 "cashflow"].keys() or stock not in self._data_cashflow["cashflow"][cashflow_type].keys():
-                return None
+                return {}
             if len(self._data_cashflow["cashflow"][cashflow_type][stock])==0:
-                return None
+                return  {}
             return self._data_cashflow["cashflow"][cashflow_type][stock].copy()
         except Exception as e:
             print("Exception caught while getting cashflow data from json file for "+stock+" with error:",e)
