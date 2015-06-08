@@ -4,6 +4,7 @@ import math
 from TimeHandler import *
 
 from Yahoo_Parser import YahooParser
+# from Json_Data_Manager import
 
 
 # used to sort dates
@@ -15,6 +16,7 @@ class StockAnalyzer:
         self.load_nyse_stock_list(nyse_stock_list_file)
         self.decimal_places=4
         self.yp = YahooParser()
+
 
         # number of cash flow data quarters to compare every stock for
         self.num_periods_toanalyze_cashflow=3
@@ -41,7 +43,7 @@ class StockAnalyzer:
         output={}
 
         reverse=True
-        sorted_dates = th.get_sorted_dates_array(cashflow_info.keys(), reverse)
+        sorted_dates = get_sorted_dates_array(cashflow_info.keys(), reverse)
         for i in range(0,len(sorted_dates)-1):
             try:
                 # previous date actually is next one in the array since it's sorted in non-asc order
@@ -164,7 +166,7 @@ class StockAnalyzer:
             If want to get best performeres by cashflow growth for number of
             consecutive periods call get_best_cashflow_performers_consec_periods()
         """
-        stock_list_to_work = self.stock_list[:]
+        stock_list_to_work = self.stock_list[:100]
 
         # array of dicts, each dict's keys are quotes and values are growth for this quote for this period,
         # array's indecies correspond to periods for which growths are calculated
@@ -187,7 +189,7 @@ class StockAnalyzer:
             for symbol in symbols:
                 reverse = True
                 # sorted dates in decreasing order
-                sorted_dates=self.get_sorted_dates_array(all_cashflow_data[symbol].keys(), reverse)
+                sorted_dates=get_sorted_dates_array(all_cashflow_data[symbol].keys(), reverse)
                 if len(sorted_dates) < 2:
                     print("***Less than 2 dates for ", symbol)
                     continue
@@ -198,7 +200,7 @@ class StockAnalyzer:
                 else:
                     num_periods=len(sorted_dates)
                 for i in range(0, num_periods):
-                    str_date=self.get_date_to_string(sorted_dates[i])
+                    str_date=get_date_to_string(sorted_dates[i])
                     value_for_date = all_cashflow_data[symbol][str_date]
                     periods[i].append({"Symbol":symbol, "Cashflow_growth":value_for_date, "Date_reported":str_date})
 
