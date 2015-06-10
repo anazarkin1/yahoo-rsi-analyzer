@@ -16,3 +16,9 @@ def get_date_to_string(time_object, format_string="%b %d %Y"):
     # NOTE: Yahoo uses dates in format "Dec 1 2012", not "Dec 01 2012"
     # that's why we replace ' 0' with ' '
     return time_object.strftime(format_string).replace(' 0', ' ')
+
+
+def prev_month(sourcedatetime):
+    this_month=sourcedatetime.month
+    return this_month -1 or 12
+
