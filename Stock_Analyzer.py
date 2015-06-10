@@ -7,6 +7,7 @@ from Yahoo_Parser import YahooParser
 from Json_Data_Manager import DataManager
 
 
+from datetime import timedelta
 # used to sort dates
 from datetime import datetime
 
@@ -67,11 +68,11 @@ class StockAnalyzer:
 
         return output
 
-    def _calculate_price_growth_all(self, quote_list):
+    def _calculate_price_growth_all(self, quote_list, force_overwrite):
 
         output={}
 
-        req_date=datetime(2014,3,28)
+        req_date =datetime(2014,3,28)
         return self.yp.scrape_stock_price(quote_list, req_date)
 
 
@@ -242,7 +243,7 @@ class StockAnalyzer:
         periods=[]
         try:
             if all_price_data is None:
-                all_price_data=self._calculate_price_growth_all(stock_list_to_work)
+                all_price_data=self._calculate_price_growth_all(stock_list_to_work, force_overwrite=overwrite)
         except Exception as e:
             print("Exception, at _calculate_prices_growth_all, with error:",e)
 
@@ -296,6 +297,24 @@ class StockAnalyzer:
 
 
 
+    def _calculate_price_growth(self,price_info):
+        output={}
+        reverse=True
+
+        sorted_dates=get_sorted_dates_array(price_info.keys(),reverse)
+        for i in range(0,len(sorted_dates)-1):
+            try:
+                str_date_start=get_date_to_string(sorted_dates[i+1])
+                str_date_end=get_date_to_string(sorted_dates[i])
+
+                if float(price_info[str_date_start]) !=0:
+                    output[str_date_end]=round ( (float(price_info[str_date_end])-float(price_info[str_date_start]))
+                                                       /price_info[str_date_start],self.decimal_places)
+                else:
+                    output[str_date_end]=-99999999.999
+                    print("Exception, calculating price growth with error: division by 0")
+            except Exception as e:
+                print("Exception, while caulculating price growth with error:",e)
 
 
 
