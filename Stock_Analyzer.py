@@ -44,7 +44,7 @@ class StockAnalyzer:
             that contains dates with corresponding cashflow values
 
             Formula to calculate performance:
-            CF_growth= (CF_start- CF_end)/CF_start
+            CF_growth= (CF_end- CF_start)/CF_start
 
         """
         output={}
@@ -58,7 +58,9 @@ class StockAnalyzer:
                 str_date_end = get_date_to_string(sorted_dates[i])
 
                 if  float(cashflow_info[str_date_start]) != 0:
-                    output[str_date_end]=round( ( float(cashflow_info[str_date_end]) - float(cashflow_info[str_date_start]) ) / float(cashflow_info[str_date_start]), self.decimal_places )
+                    output[str_date_end]=round( ( float(cashflow_info[str_date_end]) - float(cashflow_info[
+                                                                                               str_date_start]) ) /
+                                                float(cashflow_info[str_date_start]), self.decimal_places )
                 else:
                     output[str_date_end]=-9999999.9999
                     print("Exception caught while calculating cashflow growth, with error Division by 0")
@@ -125,10 +127,11 @@ class StockAnalyzer:
         """
 
         # updates class's number of periods to analyze:
-        self.num_periods_toanalyze_cashflow = numb_consec_periods
+        self.num_periods_toanalyze_cashflow = int(numb_consec_periods)
+        best_percentage=float(best_percentage)
 
         try:
-            periods=self.get_best_cashflow_performers_by_period(best_percentage, overwrite_file)
+            periods=self.get_best_cashflow_performers_by_period(best_percentage=best_percentage,overwrite_file= overwrite_file)
         except Exception as e:
             print("Exception caught get_best_cashflow_performers_consec_periods() while \
              performing get_best_cashflow_performers_by_period(), with error :", e)
@@ -182,7 +185,8 @@ class StockAnalyzer:
             If want to get best performeres by cashflow growth for number of
             consecutive periods call get_best_cashflow_performers_consec_periods()
         """
-        stock_list_to_work = self.stock_list[:100]
+
+        stock_list_to_work = self.stock_list[:]
 
         # array of dicts, each dict's keys are quotes and values are growth for this quote for this period,
         # array's indecies correspond to periods for which growths are calculated
@@ -228,7 +232,7 @@ class StockAnalyzer:
         try:
             for i in range (0, len(periods)):
                 # print("\nBEFORE\n",periods[i])
-                cut_number = math.ceil(len(periods[i])*best_percentage)
+                cut_number = math.ceil( len(periods[i])*best_percentage )
                 periods[i]= sorted( periods[i], key=itemgetter('Cashflow_growth'), reverse=True)[:cut_number]
                 # print("\nAFTER\n",periods[i])
                 # only save best_percentage*100% of top performers for each period
