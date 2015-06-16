@@ -242,6 +242,54 @@ class StockAnalyzer:
         return periods
 
 
+    def get_best_return_performers_consec_periods(self, best_percentage, numb_consec_periods, overwrite_file):
+        
+        self.num_periods_toanalyze_price = numb_consec_periods
+
+        try:
+            periods=self.get_best_prices_performers_by_period(overwrite_file,best_percentage)
+        except Exception as e:
+            print("Exception caught get_best_return_performers_consec_periods() while \
+             performing get_best_prices_performers_by_period(), with error :", e)
+
+        # array contains potential candidates for being returned as best
+        # performers in consecutive periods,
+        # we want to consider growth rates starting from the latest
+        candidate_symbols_array=[]
+        try:
+            # periods are sorted in decreasing order accroding to the date
+            last_period = periods[0]
+            for data in last_period:
+                candidate_symbols_array.append(data["Symbol"])
+        except Exception as e:
+            print("Exception caught while creating candidate_symbols_array, with error ", e)            
+            
+            
+        # get latest 'self.num_periods_toanalyze_price' count periods
+        try:
+            for period in periods[:self.num_periods_toanalyze_price]:
+                # get current period's best prices' symbols
+                # to check if those symbols are in candidates array ie:
+                # they are also best performers in previous consecutive periods
+                cur_period_top_symbols_array=[]
+                for i in period:
+                    cur_period_top_symbols_array.append(i["Symbol"])
+
+                # if one of the candidate symbols is not included in current period,
+                # then it can't be recorded as top performer in consecutive periods
+
+                # I use additional array since I'll be removing elements from the original array
+                # and for loop won't be correct otherwise
+                tmp_candidate_list=candidate_symbols_array[:]
+                for symbol in tmp_candidate_list:
+                    if symbol not in cur_period_top_symbols_array:
+                        candidate_symbols_array.remove(symbol)
+        except Exception as e:
+            print("Exception caught while figuring out what companies are top in consecutive periods with error, ", e)
+
+        return candidate_symbols_array 
+
+
     def get_best_prices_performers_by_period(self, overwrite,  best_percentage=.3,all_price_data=None):
         stock_list_to_work=self.stock_list[:100]
         periods=[]
