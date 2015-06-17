@@ -94,7 +94,7 @@ class StockAnalyzer:
             print(quote, i,"/",len(quote_list))
             i+=1
             try:
-                if overwrite_file==True or len(self.dm.get_cashflow_all_dates(cashflow_type,quote))==0 :
+                if overwrite_file==True:
                     cashflow_info = self.yp.scrape_total_cashflow(quote)
 
                     #save to json file
@@ -186,7 +186,7 @@ class StockAnalyzer:
             consecutive periods call get_best_cashflow_performers_consec_periods()
         """
 
-        stock_list_to_work = self.stock_list[:]
+        stock_list_to_work = self.stock_list[:100]
 
         # array of dicts, each dict's keys are quotes and values are growth for this quote for this period,
         # array's indecies correspond to periods for which growths are calculated
@@ -247,7 +247,7 @@ class StockAnalyzer:
         self.num_periods_toanalyze_price = numb_consec_periods
 
         try:
-            periods=self.get_best_prices_performers_by_period(overwrite_file,best_percentage)
+            periods=self.get_best_prices_performers_by_period(overwrite_file=overwrite_file,best_percentage=best_percentage)
         except Exception as e:
             print("Exception caught get_best_return_performers_consec_periods() while \
              performing get_best_prices_performers_by_period(), with error :", e)
@@ -293,6 +293,8 @@ class StockAnalyzer:
     def get_best_prices_performers_by_period(self, overwrite,  best_percentage=.3,all_price_data=None):
         stock_list_to_work=self.stock_list[:100]
         periods=[]
+        best_percentage=float(best_percentage)
+
         try:
             if all_price_data is None:
                 all_price_data=self._calculate_price_growth_all(stock_list_to_work, force_overwrite=overwrite)
@@ -338,7 +340,8 @@ class StockAnalyzer:
 
 
     def get_best_prices_performers_consec_periods(self,best_percentage,numb_consec_periods, overwrite):
-        self.num_periods_toanalyze_prices=numb_consec_periods
+        best_percentage=float(best_percentage)
+        self.num_periods_toanalyze_prices=int(numb_consec_periods)
 
         try:
             periods=self.get_best_prices_performers_by_period(overwrite=overwrite,best_percentage=best_percentage)
