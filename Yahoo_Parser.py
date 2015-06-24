@@ -1,5 +1,4 @@
 import re
-#hihihiihihihih
 from bs4 import BeautifulSoup
 import requests
 
@@ -11,6 +10,9 @@ from datetime import timedelta
 class YahooParser:
     def __init__(self):
         self.num_stocks_per_req = 40
+
+        #list of params available from cashflow page
+        self.params_cash_flow=["total cash flow from operating activities", "depreciation"]
 
     def _get_json_obj(self,data):
         return json.loads(data)
@@ -57,6 +59,85 @@ class YahooParser:
         return output
 
 
+    def scrape(self,param,quote_list,required_date=None):
+        """
+
+        :param param: stock information to scrape
+        :param quote: quote name
+        :param required_date: default is None to get all dates available
+        :return: array with:
+            [
+                "quote1":
+                    {
+                        "date1":value1,
+                        "date2":value2
+                    },
+                "quote2":
+                    {
+                    }
+
+            ]
+        """
+        pass
+        #TODO: check if param is in self.list_of_params
+        if param in self.params_cash_flow:
+            url="http://finance.yahoo.com/q/cf?s"
+            return self._scrape(url,param,quote_list)
+
+        #TODO: add balance sheet and income statement params
+        else:
+            raise Exception("Exception: "+param+" is not supported yet")
+
+
+    def _scrape(self,url,param,quote):
+
+        try:
+            r=requests.get(url)
+        except Exception as e:
+            print("Exception: scraping {0} for {1} with error: {2}".format(param,quote,e))
+
+        data=r.text
+        soup=BeautifulSoup(data)
+
+        data=[]
+        dates=[]
+        try:
+            table = soup.find('table', attrs={'class':'yfnc_tabledata1'})
+            if table is None:
+                raise ValueError("Exception Caught: can't find table tr(Probably no {0} information) for {1}".format(param,quote))
+            rows = table.find_all('tr')
+        except Exception as e:
+            raise ValueError("Exception Caught: can't find table tr(Probably no {0} information) for {1} with error: {2}".format(param,quote,e))
+
+
+
+        for row in rows:
+            cols=row.find_all('td')
+            cols = [ele.text.strip().replace(",","") for ele in cols]
+            for col in cols:
+                if col.lower()==param:
+                    data=cols[1:]
+                if col=="Period Ending":
+                    dates=cols[1:]
+
+
+
+        #Regex used to remove '(',')' from cash flow numbers, since
+        # negative values are placed inside '(', ')'
+        #we want negatives to be in format '-value' to be used in calculations
+        regex = re.compile('[(-,)]')
+        for i in range(0,len(data)):
+            neg = False
+            if '(' in data[i]:
+                neg =True
+            data[i]=regex.sub('', str(data[i]))
+            data[i] = float(data[i])
+
+            if neg:
+                data[i]*=-1
+
+
+        return dict(zip(dates, data))
 
 
     def scrape_total_cashflow(self, quote):
