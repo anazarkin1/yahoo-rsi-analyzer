@@ -1,18 +1,18 @@
 import re
 from bs4 import BeautifulSoup
 import requests
-
-#Using zip instead of izip since izip gives an error for some reason
-#used for itertools.izip as it is said to be more memory efficient than zip
-#http://stackoverflow.com/questions/209840/map-two-lists-into-a-dictionary-in-python
 import json
+from TimeHandler import *
 from datetime import timedelta
+
 class YahooParser:
     def __init__(self):
         self.num_stocks_per_req = 40
 
         #list of params available from cashflow page
         self.params_cash_flow=["total cash flow from operating activities", "depreciation"]
+        self.params_balance_sheet=["",""]
+        self.params_income_statement=[]
 
     def _get_json_obj(self,data):
         return json.loads(data)
@@ -59,42 +59,58 @@ class YahooParser:
         return output
 
 
-    def scrape(self,param,quote_list,required_date=None):
+    def scrape(self,param,quote,required_dates=None):
         """
 
         :param param: stock information to scrape
-        :param quote: quote name
-        :param required_date: default is None to get all dates available
+        :param quote: quote's symbol
+        :param required_date:array of date objects(used primarily for prices);default is None to get all dates available
+        :return:  array with:
+                    [
+                        {"date1":value1},
+                        {"date2":value2}
+                    ]
+        """
+        param=param.lower()
+        try:
+            #TODO: check if param is in self.list_of_params
+            if param in self.params_cash_flow:
+                url="http://finance.yahoo.com/q/cf?s={0}".format(quote)
+                return self._scrape(url,param)
+            #TODO: add balance sheet and income statement params
+            elif param in self.params_balance_sheet:
+                url="http://finance.yahoo.com/q/bs?s={0}".format(quote)
+                return self._scrape(url,param)
+            elif param in self.params_income_statement:
+                url="http://finance.yahoo.com/q/is?s=0}".format(quote)
+                return self._scrape(url,param)
+            else:
+                raise Exception("Exception: "+param+" is not supported yet")
+        except Exception as e:
+            print("Error while scraping for {0}".format(param))
+
+    def scrape_list(self,param,quote_list,required_dates=None):
+        """
+        :param param: stock information to scrape
+        :param quote_list: quotes symbols list
+        :param required_date:array of date objects(used primarily for prices);default is None to get all dates available
         :return: array with:
-            [
-                "quote1":
+        [
                     {
                         "date1":value1,
                         "date2":value2
                     },
-                "quote2":
-                    {
-                    }
-
-            ]
+        ]
         """
-        pass
-        #TODO: check if param is in self.list_of_params
-        if param in self.params_cash_flow:
-            url="http://finance.yahoo.com/q/cf?s"
-            return self._scrape(url,param,quote_list)
+        #TODO: implement
+        raise Exception("ERROR: scrape_list is not implmented yet.")
 
-        #TODO: add balance sheet and income statement params
-        else:
-            raise Exception("Exception: "+param+" is not supported yet")
-
-
-    def _scrape(self,url,param,quote):
+    def _scrape(self,url,param):
 
         try:
             r=requests.get(url)
         except Exception as e:
-            print("Exception: scraping {0} for {1} with error: {2}".format(param,quote,e))
+            print("Exception: scraping {0} with error: {1}".format(param,e))
 
         data=r.text
         soup=BeautifulSoup(data)
@@ -104,11 +120,10 @@ class YahooParser:
         try:
             table = soup.find('table', attrs={'class':'yfnc_tabledata1'})
             if table is None:
-                raise ValueError("Exception Caught: can't find table tr(Probably no {0} information) for {1}".format(param,quote))
+                raise Exception("Exception Caught: can't find table tr(Probably no {0} information)".format(param))
             rows = table.find_all('tr')
         except Exception as e:
-            raise ValueError("Exception Caught: can't find table tr(Probably no {0} information) for {1} with error: {2}".format(param,quote,e))
-
+            raise Exception("Exception Caught: can't find table tr(Probably no {0} information) with error: {1}".format(param,e))
 
 
         for row in rows:
@@ -119,8 +134,6 @@ class YahooParser:
                     data=cols[1:]
                 if col=="Period Ending":
                     dates=cols[1:]
-
-
 
         #Regex used to remove '(',')' from cash flow numbers, since
         # negative values are placed inside '(', ')'
