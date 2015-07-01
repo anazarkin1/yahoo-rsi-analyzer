@@ -4,22 +4,17 @@ import requests
 import json
 from TimeHandler import *
 from datetime import timedelta
+import re
 
 class YahooParser:
     def __init__(self):
         self.num_stocks_per_req = 40
 
-        #list of params available from cashflow page
-        self.params_cash_flow=["total cash flow from operating activities", "depreciation"]
-        self.params_balance_sheet=["",""]
-        self.params_income_statement=["research development","income tax expense"]
-
-
     def _get_json_obj(self,data):
         return json.loads(data)
 
 
-    def scrape_stock_price(self, quote_list, required_date):
+    def _scrape_stock_price(self, quote_list, required_date):
         """
             Returns a dictionary where keys are stock symbols and keys are stock prices for required_date
             OR 0 if an error occurred
@@ -61,10 +56,11 @@ class YahooParser:
         return output
 
 
-    def scrape(self, param, quote, required_dates=None):
+    def scrape(self, param, quote, type ,required_dates=None):
         """
         :param param: stock information to scrape
         :param quote: quote's symbol
+        :param type is a financial statement type or price  ("bs","is","cf","price")
         :param required_date:array of date objects(used primarily for prices);default is None to get all dates available
         :return:  array with:
                     [
@@ -73,18 +69,22 @@ class YahooParser:
                     ]
         """
         param=param.lower()
+        type = type.lower()
         try:
-            #TODO: check if param is in self.list_of_params
-            if param in self.params_cash_flow:
+            if type == "cf":
                 url = "http://finance.yahoo.com/q/cf?s={0}".format(quote)
                 return self._scrape(url,param)
-            #TODO: add balance sheet and income statement params
-            elif param in self.params_balance_sheet:
+            elif type == "bs":
                 url = "http://finance.yahoo.com/q/bs?s={0}".format(quote)
                 return self._scrape(url,param)
-            elif param in self.params_income_statement:
+            elif type == "is":
                 url = "http://finance.yahoo.com/q/is?s={0}".format(quote)
                 return self._scrape(url,param)
+            elif type == "price":
+                if len(required_dates > 0):
+                    return self._scrape_stock_price([quote],required_date=required_dates[0])
+                else:
+                    raise Exception("Error: date is required for price for quote: {0}".format(quote))
             else:
                 raise Exception("Exception: "+param+" is not supported yet")
         except Exception as e:
@@ -112,26 +112,16 @@ class YahooParser:
                 tds = tr.find_all('td')
                 pos = 1
                 for td in tds:
-                    if td.text.strip().lower() == "period ending":
-                        #
-                        dates = [ele.text.strip().replace(",", "") for ele in tds[pos:]]
-                    elif td.text.strip().lower() == param:
+                    if td.text.strip().lower() == param:
                         data = [ele.text.strip().replace(",", "") for ele in tds[pos:]]
                     else:
                         pos += 1
 
+            dates_td_tag = soup.find(text = re.compile("Period Ending"))
+            dates = [sibling.text.strip().replace(",","") for sibling in dates_td_tag.parent.parent.parent.next_siblings]
+
         except Exception as e:
             raise Exception("Exception Caught: can't find table tr(Probably no {0} information) with error: {1}".format(param, e))
-
-        # for row in rows:
-        #     cols=row.find_all('td')
-        #     pos = 0
-        #     for col in cols:
-        #         if col.lower() == param:
-        #             data=cols[pos:]
-        #         if col=="Period Ending":
-        #             dates=cols[pos:]
-        #         pos += 1
 
         #Regex used to remove '(',')' from cash flow numbers, since
         # negative values are placed inside '(', ')'
@@ -159,47 +149,8 @@ class YahooParser:
             Returns Dictionary with keys as dates and values as actual data
             Usually would return 4 elements for 4 previous quarters
         """
+        #
+        # DON'T USE THIS FUNCTION AS IT'S GOING TO GET REMOVED IN FUTURE VERSIONS
+        #
+        return self.scrape("Total Cash Flow From Operating Activities",quote,"cf")
 
-        url="http://finance.yahoo.com/q/cf?s="+quote
-        try:
-            r = requests.get(url)
-        except Exception as e:
-            print("Exception Caught: scraping total cashflow for "+quote+" error:",e)
-
-        data=r.text
-        soup=BeautifulSoup(data)
-
-        data=[]
-        dates=[]
-        try:
-            table = soup.find('table', attrs={'class':'yfnc_tabledata1'})
-            if table is None:
-                raise ValueError("Exception Caught: can't find table tr(Probably no cashflow information) for " + quote)
-            rows = table.find_all('tr')
-        except Exception as e:
-            raise ValueError("Exception Caught: can't find table tr(Probably no cashflow information) for "+quote+" error:",e)
-
-        for row in rows:
-            cols=row.find_all('td')
-            cols = [ele.text.strip().replace(",","") for ele in cols]
-            for col in cols:
-                if col=="Total Cash Flow From Operating Activities":
-                    data=cols[1:]
-                if col=="Period Ending":
-                    dates=cols[1:]
-
-
-        #Regex used to remove '(',')' from cash flow numbers, since
-        # negative values are placed inside '(', ')'
-        #we want negatives to be in format '-value' to be used in calculations
-        regex = re.compile('[(-,)]')
-        for i in range(0, len(data)):
-            neg = False
-            if '(' in data[i]:
-                neg =True
-            data[i]=regex.sub('', str(data[i]))
-            data[i] = float(data[i])
-
-            if neg:
-                data[i] *= -1
-        return dict(zip(dates, data))
