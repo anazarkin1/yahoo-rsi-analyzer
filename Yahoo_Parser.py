@@ -14,7 +14,7 @@ class YahooParser:
         return json.loads(data)
 
 
-    def _scrape_stock_price(self, quote_list, required_date):
+    def _scrape_yql(self, quote_list, yql_table ,required_date):
         """
             Returns a dictionary where keys are stock symbols and keys are stock prices for required_date
             OR 0 if an error occurred
@@ -35,7 +35,7 @@ class YahooParser:
         except Exception as e:
             print("Exception caught while getting required_date string with error:, ", e)
 
-        base_query = "http://query.yahooapis.com/v1/public/yql?q=select * from yahoo.finance.historicaldata where " \
+        base_query = "http://query.yahooapis.com/v1/public/yql?q=select * from yahoo.finance."+yql_table+" where " \
                      "symbol in" + quote_list_str + " and startDate ='" + required_date_str + "' and endDate = " \
                                                                                               "'" + required_date_str + "'&env=store://datatables.org/alltableswithkeys&format=json"
         try:
@@ -80,11 +80,18 @@ class YahooParser:
             elif type == "is":
                 url = "http://finance.yahoo.com/q/is?s={0}".format(quote)
                 return self._scrape(url,param)
+            elif type == "ks":
+                url = "http://finance.yahoo.com/q/ks?s={0}".format(quote)
+                return self._scrape(url,param)
+
             elif type == "price":
-                if len(required_dates > 0):
-                    return self._scrape_stock_price([quote],required_date=required_dates[0])
+                if len(required_dates) > 0:
+                    return self._scrape_yql([quote],required_date=required_dates[0],yql_table="historicaldata")
                 else:
                     raise Exception("Error: date is required for price for quote: {0}".format(quote))
+            elif type == "dividends":
+                if len(required_dates) > 0:
+                    return self._scrape_yql([quote],required_date=required_dates[0], yql_table="dividendhistory")
             else:
                 raise Exception("Exception: "+param+" is not supported yet")
         except Exception as e:
