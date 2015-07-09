@@ -270,10 +270,13 @@ class ScrapeYql(ScrapeMain):
         return "http://query.yahooapis.com/v1/public/yql?q=select * from yahoo.finance."+ yql_table +" where symbol in" + quote_list_str + " and startDate ='" + required_date_str + "' and endDate = '"+required_date_str\
               + "'&env=store://datatables.org/alltableswithkeys&format=json"
 
-
     def scrape(self, quote_list, required_date):
         raise NotImplementedError("not implemented in scrapeyql, should use children classes")
 
+
+class ScrapeHistoricalPrices(ScrapeYql):
+    #TODO:Implement
+    pass
 
 class ScrapeDividendHistory(ScrapeYql):
     def scrape(self, quote_list, required_date):
@@ -303,8 +306,8 @@ class ScrapeYahoo(ScrapeMain):
         r = self.get_request(url)
 
 
-
 class ScrapeYahooKS(ScrapeYahoo):
+
     def __init__(self):
         self.page = "ks"
 
@@ -322,11 +325,22 @@ class ScrapeYahooKS(ScrapeYahoo):
         else:
             raise Exception("Error: no data found for {0} param {1}".format(quote, param))
 
-        data = self.changeNeg(data)
+        try:
+            data = self.changeNeg([data])[0]
+        except Exception as e:
+            raise Exception("Error: converting data to numeric format, with error:{0}".format(e))
 
         return {quote: data}
 
 
+class ScrapeYahooBS(ScrapeYahoo):
+    #TODO:Implement
+    pass
+
+
+class ScrapeYahooCF(ScrapeYahoo):
+    #TODO:Implement
+    pass
 
 
 
