@@ -204,11 +204,16 @@ class ScrapeMain():
     def convert_txt_to_float(self, txt):
         """
         Convert shortent text representation of a number to float
+        Also Check if txt is "-"(ie No data) and return "-" in that case
         ie: 720M -> 720000000
         :param txt: shortent text representation of a number that is needed to be converted
-        :return: a float number
+        :return: a string with a number
         """
         txt = txt.upper()
+
+        if txt == "-":
+            return txt
+
 
         formats = {"M":1000000, "B":1000000000}
 
@@ -216,11 +221,11 @@ class ScrapeMain():
             for chr in formats.keys():
                 pos = txt.find(chr)
                 if pos >-1:
-                    return float(txt[:pos]) * formats[chr]
+                    return str (float(txt[:pos]) * formats[chr] )
+            return txt
         except:
             raise Exception("Error: can't convert {0} to a number representaiton, probably unknown format".format(txt))
 
-        raise Exception("Error: can't convert {0} to a number representaiton, probably unknown format".format(txt))
 
     def changeNeg(self, data):
         regex = re.compile('[(-,)]')
@@ -300,6 +305,7 @@ class ScrapeYahoo(ScrapeMain):
     def prepare_url(self, page, quote):
         return "http://finance.yahoo.com/q/{0}?s={1}".format(page, quote)
 
+
     def scrape(self, quote_list, param, page, required_date = None):
         quote = quote_list[0]
         url = self.prepare_url(page, quote)
@@ -334,8 +340,36 @@ class ScrapeYahooKS(ScrapeYahoo):
 
 
 class ScrapeYahooBS(ScrapeYahoo):
+    def __init__(self):
+        self.page="bs"
     #TODO:Implement
-    pass
+    def scrape(self, quote, param):
+        page = self.page
+        url = self.prepare_url(page, quote)
+        r = self.get_request(url)
+        soup = self.get_soup(r.text)
+
+        data = []
+        dates = []
+
+        param_tag = soup.find(text = re.compile(param, re.I))
+        if param_tag is not None:
+            data = [sib.text.strip().replace(",","") for sib in param_tag.parent.next_siblings]
+        else:
+            raise Exception("Error: no data found for {0} param {1}".format(quote, param))
+
+        dates_tag = soup.find(text = re.compile("Period Ending"))
+        if dates_tag is not None:
+            dates = [sib.text.strip().replace(",","") for sib in dates_tag.parent.parent.parent.next_siblings]
+        else:
+            raise Exception("Error: no dates found for {0} param {1}".format(quote, param))
+
+        try:
+            data = self.changeNeg(data)
+        except Exception as e:
+            raise Exception("Error: converting data to numeric format, with error:{0}".format(e))
+        return dict(zip(dates, data))
+
 
 
 class ScrapeYahooCF(ScrapeYahoo):
