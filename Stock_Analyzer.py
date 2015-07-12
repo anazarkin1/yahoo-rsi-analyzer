@@ -3,7 +3,7 @@ import math
 
 from TimeHandler import *
 
-from Yahoo_Parser import YahooParser
+from Yahoo_Parser import *
 from Json_Data_Manager import DataManager
 
 
@@ -17,16 +17,15 @@ class StockAnalyzer:
         self.stock_list=[]
         self.load_nyse_stock_list(nyse_stock_list_file)
         self.decimal_places=4
-        self.yp = YahooParser()
         self.dm = DataManager()
 
 
 
         # number of cash flow data quarters to compare every stock for
-        self.num_periods_toanalyze_cashflow=3
+        self.num_periods_toanalyze_cashflow = 3
 
         #number of prices months to compare every stock for
-        self.num_periods_toanalyze_prices=8
+        self.num_periods_toanalyze_prices = 8
 
 
     def load_nyse_stock_list(self, nyse_stock_list_file="nyse_stock_list.txt"):
@@ -70,13 +69,6 @@ class StockAnalyzer:
 
         return output
 
-    def _calculate_price_growth_all(self, quote_list, force_overwrite):
-
-        output={}
-
-        req_date =datetime(2014,3,28)
-        return self.yp.scrape_stock_price(quote_list, req_date)
-
 
     def _calculate_cashflow_growth_all(self, quote_list, overwrite_file, cashflow_type="operating activities"):
         """
@@ -94,6 +86,7 @@ class StockAnalyzer:
             print(quote, i,"/",len(quote_list))
             i+=1
             try:
+                file_info=self.dm.get_cashflow_all_dates(cashflow_type,quote)
                 if overwrite_file==True:
                     cashflow_info = self.yp.scrape_total_cashflow(quote)
 
@@ -102,7 +95,7 @@ class StockAnalyzer:
                         date=get_string_to_date_object(date_str)
                         self.dm.save_cashflow_single(cashflow_type,quote,date,value)
                 else:
-                    cashflow_info = self.dm.get_cashflow_all_dates(cashflow_type,quote)
+                    cashflow_info = file_info
             except Exception as e:
                 print('Exception caught while scraping total cashflow for ',quote,' with error' ,e)
 
@@ -151,7 +144,7 @@ class StockAnalyzer:
 
         # get latest 'self.num_periods_toanalyze_cashflow' count periods
         try:
-            for period in periods[:self.num_periods_toanalyze_cashflow]:
+            for period in periods[1:self.num_periods_toanalyze_cashflow]:
                 # get current period's best performers' symbols
                 # to check if those symbols are in candidates array ie:
                 # they are also best performers in previous consecutive periods
@@ -186,7 +179,7 @@ class StockAnalyzer:
             consecutive periods call get_best_cashflow_performers_consec_periods()
         """
 
-        stock_list_to_work = self.stock_list[:100]
+        stock_list_to_work = self.stock_list[:]
 
         # array of dicts, each dict's keys are quotes and values are growth for this quote for this period,
         # array's indecies correspond to periods for which growths are calculated
@@ -241,60 +234,38 @@ class StockAnalyzer:
         # print("PERIODS: *********************\n", periods, "\n***********************************\n")
         return periods
 
+    def _calculate_growth(self, data):
+        """
+        Calculates growth ratios for every stock in the input dict ,
+        Formula: growth = (end - start) / start
+        :param data: format :{ "StockName1": {"date1":"value1", "date2":"value2", "date3":"value3"},
+                               "StockName2": {"date2":"value3","date4":"value455}
+                              }
+        :return: { "StockName1": {"date1": "ratio1", "date2":"ratio2"},
+                   "StockName2": {"date2": "ratio2"}
+                    }
+        """
 
-    def get_best_return_performers_consec_periods(self, best_percentage, numb_consec_periods, overwrite_file):
-        
-        self.num_periods_toanalyze_price = numb_consec_periods
+        reverse = True
 
-        try:
-            periods=self.get_best_prices_performers_by_period(overwrite_file=overwrite_file,best_percentage=best_percentage)
-        except Exception as e:
-            print("Exception caught get_best_return_performers_consec_periods() while \
-             performing get_best_prices_performers_by_period(), with error :", e)
+        for stock in data.keys():
+            try:
 
-        # array contains potential candidates for being returned as best
-        # performers in consecutive periods,
-        # we want to consider growth rates starting from the latest
-        candidate_symbols_array=[]
-        try:
-            # periods are sorted in decreasing order accroding to the date
-            last_period = periods[0]
-            for data in last_period:
-                candidate_symbols_array.append(data["Symbol"])
-        except Exception as e:
-            print("Exception caught while creating candidate_symbols_array, with error ", e)            
-            
-            
-        # get latest 'self.num_periods_toanalyze_price' count periods
-        try:
-            for period in periods[:self.num_periods_toanalyze_price]:
-                # get current period's best prices' symbols
-                # to check if those symbols are in candidates array ie:
-                # they are also best performers in previous consecutive periods
-                cur_period_top_symbols_array=[]
-                for i in period:
-                    cur_period_top_symbols_array.append(i["Symbol"])
+            except Exception as e:
+                print("Error: calculating growth for {0} stock, with error: {1}".format(stock, e))
 
-                # if one of the candidate symbols is not included in current period,
-                # then it can't be recorded as top performer in consecutive periods
 
-                # I use additional array since I'll be removing elements from the original array
-                # and for loop won't be correct otherwise
-                tmp_candidate_list=candidate_symbols_array[:]
-                for symbol in tmp_candidate_list:
-                    if symbol not in cur_period_top_symbols_array:
-                        candidate_symbols_array.remove(symbol)
-        except Exception as e:
-            print("Exception caught while figuring out what companies are top in consecutive periods with error, ", e)
 
-        return candidate_symbols_array 
+    def _calculate_price_growth_all(self, quote_list, force_overwrite):
 
+        output={}
+
+        req_date =datetime(2014,3,28)
+        return self.yp.scrape_stock_price(quote_list, req_date)
 
     def get_best_prices_performers_by_period(self, overwrite,  best_percentage=.3,all_price_data=None):
         stock_list_to_work=self.stock_list[:100]
         periods=[]
-        best_percentage=float(best_percentage)
-
         try:
             if all_price_data is None:
                 all_price_data=self._calculate_price_growth_all(stock_list_to_work, force_overwrite=overwrite)
@@ -336,12 +307,8 @@ class StockAnalyzer:
             print("Exception, at _calculate_prices_growth_all() performing periods sort with cutting off worst "
                   "performers, with error:",e)
 
-
-
-
     def get_best_prices_performers_consec_periods(self,best_percentage,numb_consec_periods, overwrite):
-        best_percentage=float(best_percentage)
-        self.num_periods_toanalyze_prices=int(numb_consec_periods)
+        self.num_periods_toanalyze_prices=numb_consec_periods
 
         try:
             periods=self.get_best_prices_performers_by_period(overwrite=overwrite,best_percentage=best_percentage)
@@ -349,8 +316,6 @@ class StockAnalyzer:
             print("Exception, get_best_prices_performers_by_periods() with error:", e)
 
         return
-
-
 
     def _calculate_price_growth(self,price_info):
         output={}
@@ -370,7 +335,6 @@ class StockAnalyzer:
                     print("Exception, calculating price growth with error: division by 0")
             except Exception as e:
                 print("Exception, while caulculating price growth with error:",e)
-
 
 
 
