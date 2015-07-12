@@ -6,8 +6,6 @@ from TimeHandler import *
 from datetime import timedelta
 import re
 
-class YahooParser:
-
 
 class ScrapeMain():
     def get_json_obj(self,data):
