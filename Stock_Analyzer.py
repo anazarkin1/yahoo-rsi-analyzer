@@ -291,8 +291,8 @@ class StockAnalyzer:
 
         :param best_percentage:
         :param num_consec_periods:
-        :return: from input example array of arrays for every time period ,
-                    with dict inside inner array(keys are stocknames, values are their ratios for that period:
+        :return: from input example array of dictionaries for every time period ,
+                    (keys are stocknames, values are their ratios for that period:
                     [
                          {"Stockname1":ratio2 , "Stockname2": ratio44} ,
                          {"Stockname1: ratio1, "Stockname2": ratio2}

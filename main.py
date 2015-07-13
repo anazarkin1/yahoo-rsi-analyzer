@@ -3,6 +3,7 @@ from TimeHandler import *
 from Json_Data_Manager import DataManager
 from Console import Console
 from Yahoo_Parser import *
+from datetime import *
 def main():
     yp = ScrapeDividendHistory()
     sa = StockAnalyzer()
@@ -12,7 +13,7 @@ def main():
     # print(yp.scrape_stock_price(["AAPL", "T"], "2010-11-11"))
     try:
         #testings:
-        print( yp.scrape("AAPL", datetime(year=2015,month=5,day=2)) )
+        print( sa._transform_to_periods({"SN1": {datetime.now(): 22, datetime.now(): 33}, "SN2": {datetime.now(): 11} }) )
 
         # while True:
         #     console.print("To exit type 'exit'")
