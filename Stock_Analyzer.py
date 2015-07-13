@@ -280,7 +280,7 @@ class StockAnalyzer:
         return output
 
     #new
-    def _get_growth_periods(self, data, best_percentage, num_consec_periods):
+    def _transform_to_periods(self, data, best_percentage, num_consec_periods):
         """
 
         :param data: output of _calculate_growth_all  format:

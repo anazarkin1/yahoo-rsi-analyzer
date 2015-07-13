@@ -4,7 +4,7 @@ from Json_Data_Manager import DataManager
 from Console import Console
 from Yahoo_Parser import *
 def main():
-    yp = ScrapeYahooCF()
+    yp = ScrapeDividendHistory()
     sa = StockAnalyzer()
     dm = DataManager()
     console=Console()
@@ -12,9 +12,7 @@ def main():
     # print(yp.scrape_stock_price(["AAPL", "T"], "2010-11-11"))
     try:
         #testings:
-        print( yp.scrape("AAPL","Depreciation") )
-
-
+        print( yp.scrape("AAPL", datetime(year=2015,month=5,day=2)) )
 
         # while True:
         #     console.print("To exit type 'exit'")
