@@ -234,7 +234,7 @@ class StockAnalyzer:
         # print("PERIODS: *********************\n", periods, "\n***********************************\n")
         return periods
 
-    def _calculate_growth(self, data):
+    def _calculate_growth_all(self, data):
         """
         Calculates growth ratios for every stock in the input dict
         Could be used for calculation of growth ratios of any param as long as input data meets requirements
