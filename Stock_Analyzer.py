@@ -234,6 +234,7 @@ class StockAnalyzer:
         # print("PERIODS: *********************\n", periods, "\n***********************************\n")
         return periods
 
+    #new
     def _calculate_growth_all(self, data):
         """
         Calculates growth ratios for every stock in the input dict
@@ -278,7 +279,26 @@ class StockAnalyzer:
 
         return output
 
+    #new
+    def _get_growth_periods(self, data, best_percentage, num_consec_periods):
+        """
 
+        :param data: output of _calculate_growth_all  format:
+                     { "StockName1": {date1: ratio1, date2:ratio2},
+                       "StockName2": {date2: ratio2, date33: ratio44}
+                     }
+
+        :param best_percentage:
+        :param num_consec_periods:
+        :return: from input example array of arrays for every time period ,
+                    with dict inside inner array(keys are stocknames, values are their ratios for that period:
+                    [
+                        ["Stockname1":ratio2, "Stockname2": ratio44],
+                        ["Stockname1: ratio1, "Stockname2": ratio2]
+                    ]
+
+        """
+        
 
     def _calculate_price_growth_all(self, quote_list, force_overwrite):
 
