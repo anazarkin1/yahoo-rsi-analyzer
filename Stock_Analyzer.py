@@ -319,6 +319,43 @@ class StockAnalyzer:
         return periods
 
 
+    #new
+    def _get_best_consec_periods(self, periods,  best_percentage, num_periods):
+        """
+
+        :param data:
+            format: [
+                        {"SN1": ratio2, "SN2": ratio44},
+                        {"SN1": ratio1, "SN2": ratio3},
+                        ...
+                    ]
+        :param best_percentage:
+        :param num_periods:
+        :return:
+        """
+        num_periods = int(num_periods)
+        best_percentage = float(best_percentage)
+
+        #tuple
+        candidates = sorted( periods[0].items(), key = itemgetter(1), reverse = True )
+
+        #only need best_percentage of them
+        cut_number = math.ceil( len(candidates) * best_percentage )
+        candidates = candidates[:cut_number]
+
+        for i in range(1, len(periods)):
+            cut_number = math.ceil( len(periods[i]) * best_percentage )
+            cur_period = sorted( periods[i].items(), key = itemgetter(1) , reverse = True )[:cut_number]
+
+            old_candidates = [x[0] for x in candidates]
+            for cand in old_candidates:
+                if cand not in cur_period
+                    candidates.remove(cand)
+
+        return candidates
+
+
+
 
     def _calculate_price_growth_all(self, quote_list, force_overwrite):
 

@@ -83,6 +83,14 @@ class ScrapeYql(ScrapeMain):
               + "'&env=store://datatables.org/alltableswithkeys&format=json"
 
     def scrape(self, quote, required_date):
+        """
+
+        :param quote:
+        :param required_date:
+        :return:
+            {'date1': 'value'}
+            #Note: date1 and value are strings
+        """
         tag_name = self.names[self.name]
         url = self.prepare_url(quote, self.name, required_date)
         r = self.get_request(url)
@@ -119,6 +127,14 @@ class ScrapeYahoo(ScrapeMain):
         return "http://finance.yahoo.com/q/{0}?s={1}".format(page, quote)
 
     def scrape(self, quote, param):
+        """
+
+        :param quote:
+        :param param:
+        :return:
+            {'date1': 'value1', 'date2': 'value2' ...}
+            #note dates and values are strings
+        """
         page = self.page
         url = self.prepare_url(page, quote)
         r = self.get_request(url)
@@ -156,6 +172,13 @@ class ScrapeYahooKS(ScrapeYahoo):
         self.page = "ks"
 
     def scrape(self, quote, param):
+        """
+
+        :param quote:
+        :param param:
+        :return:
+            {'StockName1': 'value1'}
+        """
         page = self.page
         url = self.prepare_url(page, quote)
         r = self.get_request(url)
