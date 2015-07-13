@@ -5,7 +5,7 @@ from Console import Console
 from Yahoo_Parser import *
 from datetime import *
 def main():
-    yp = ScrapeDividendHistory()
+    yp = ScrapeYahooKS()
     sa = StockAnalyzer()
     dm = DataManager()
     console=Console()
@@ -13,8 +13,7 @@ def main():
     # print(yp.scrape_stock_price(["AAPL", "T"], "2010-11-11"))
     try:
         #testings:
-        print( sa._transform_to_periods({"SN1": {datetime.now(): 22, datetime.now(): 33}, "SN2": {datetime.now(): 11} }) )
-
+        sa._get_best_consec_periods([{"SN1": 2, "SN2": 3, "SN3": 4},{"SN1":4, "SN3":2},{"SN2: 2"}], .3, 2)
         # while True:
         #     console.print("To exit type 'exit'")
         #     console.print("Type number from below:")
