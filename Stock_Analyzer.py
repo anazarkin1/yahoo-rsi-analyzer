@@ -236,23 +236,47 @@ class StockAnalyzer:
 
     def _calculate_growth(self, data):
         """
-        Calculates growth ratios for every stock in the input dict ,
-        Formula: growth = (end - start) / start
-        :param data: format :{ "StockName1": {"date1":"value1", "date2":"value2", "date3":"value3"},
-                               "StockName2": {"date2":"value3","date4":"value455}
-                              }
-        :return: { "StockName1": {"date1": "ratio1", "date2":"ratio2"},
-                   "StockName2": {"date2": "ratio2"}
-                    }
-        """
+        Calculates growth ratios for every stock in the input dict
+        Could be used for calculation of growth ratios of any param as long as input data meets requirements
 
-        reverse = True
+        Formula: growth = (end - start) / start
+        :param data: format :{ "StockName1: {date1: value1, date2: value2, date3: value3},
+                               "StockName2": {date2: value3 ,date4: value455}
+                              }
+
+        :return: { "StockName1": {date1: ratio1, date2:ratio2},
+                   "StockName2": {date2: ratio2}
+                    }
+        #Note : All dates are datetime objects, All values and ratios are floats, All stocknames are strings
+
+        """
+        output = {}
 
         for stock in data.keys():
             try:
+                #dates are sorted in non-ascending order
+                dates = sorted(data[stock].keys(), reverse = True)
+                for i in range(0, len(dates) - 1):
+                    date_start = dates[i+1]
+                    date_end = dates[i]
+                    value_start = data[stock][date_start]
+                    value_end = data[stock][date_end]
+
+                    if value_start != 0:
+                        #if the first time adding data to this stock, init it's content dict
+                        if stock not in output.keys():
+                            output[stock] = {}
+
+                        output[stock][date_end] = round( (value_end - value_start) / value_start, self.decimal_places)
+                    else:
+                        print("Error: division by zero at calculating growth for {0} on dates {1}, {2}".format(stock,str(date_end), str(date_start)) )
+                        break;
+
 
             except Exception as e:
                 print("Error: calculating growth for {0} stock, with error: {1}".format(stock, e))
+
+        return output
 
 
 
