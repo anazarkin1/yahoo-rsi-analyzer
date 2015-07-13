@@ -280,25 +280,45 @@ class StockAnalyzer:
         return output
 
     #new
-    def _transform_to_periods(self, data, best_percentage, num_consec_periods):
+    def _transform_to_periods(self, data):
         """
 
         :param data: output of _calculate_growth_all  format:
                      { "StockName1": {date1: ratio1, date2:ratio2},
                        "StockName2": {date2: ratio2, date33: ratio44}
                      }
+                     Assumption: all ratios are valid floats, this function doesn't check correctness of ratios
 
         :param best_percentage:
         :param num_consec_periods:
         :return: from input example array of arrays for every time period ,
                     with dict inside inner array(keys are stocknames, values are their ratios for that period:
                     [
-                        ["Stockname1":ratio2, "Stockname2": ratio44],
-                        ["Stockname1: ratio1, "Stockname2": ratio2]
+                         {"Stockname1":ratio2 , "Stockname2": ratio44} ,
+                         {"Stockname1: ratio1, "Stockname2": ratio2}
                     ]
 
         """
-        
+
+        #find max number of periods in all stock dicts
+        #used to init periods array with enough number of dicts
+        maxi = 0
+        for i in data.keys():
+            if len(i) > 0:
+                maxi = len(i)
+
+        periods = [{} for i in range(0, maxi - 1)]
+
+        for stock_name in data.keys():
+
+            i = 0
+            for period in data[stock_name].keys():
+                periods[i][stock_name] = data[stock_name][period]
+                i += 1
+
+        return periods
+
+
 
     def _calculate_price_growth_all(self, quote_list, force_overwrite):
 
