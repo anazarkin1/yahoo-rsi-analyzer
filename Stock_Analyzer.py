@@ -333,24 +333,29 @@ class StockAnalyzer:
         :param num_periods:
         :return:
         """
-        num_periods = int(num_periods)
+        if len(periods) < num_periods:
+            raise Exception("***Not enough periods data passed to calculate best consec periods, passed {0} need {1}".format(len(periods), num_periods))
+        else:
+            num_periods = int(num_periods)
         best_percentage = float(best_percentage)
 
         #tuple
-        candidates = sorted( periods[0].items(), key = itemgetter(1), reverse = True )
+        candidates = [x[0] for x in sorted( periods[0].items(), key = itemgetter(1), reverse = True ) ]
 
         #only need best_percentage of them
         cut_number = math.ceil( len(candidates) * best_percentage )
         candidates = candidates[:cut_number]
 
-        for i in range(1, len(periods)):
+        #for loop from 1 to num_periods-1 since first period's top are already included
+        for i in range(1, num_periods):
             cut_number = math.ceil( len(periods[i]) * best_percentage )
-            cur_period = sorted( periods[i].items(), key = itemgetter(1) , reverse = True )[:cut_number]
+            cur_period_candidates = [x[0] for x in sorted( periods[i].items(), key = itemgetter(1) , reverse = True )[:cut_number] ]
 
-            old_candidates = [x[0] for x in candidates]
+            old_candidates = candidates[:]
             for cand in old_candidates:
-                if cand not in cur_period
+                if cand not in cur_period_candidates:
                     candidates.remove(cand)
+
 
         return candidates
 
