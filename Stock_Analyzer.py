@@ -235,6 +235,54 @@ class StockAnalyzer:
         return periods
 
     #new
+    def _convert_str_data(self, str_data, date_format):
+        """
+
+        :param str_data: format:
+                    {"date1":"value1", "date2":"value2",..}
+        :return:
+                    {date1: value1, date2: value2, ...}
+                    dates are datetime objs, values are floats
+        """
+        output = {}
+        for str_date, str_value in str_data.items():
+            if str_value == "null":
+                raise Exception("No value data available on date {0}".format(str_data))
+            try:
+                date = get_string_to_date_object(str_data)
+            except Exception as e:
+                raise Exception("Error converting string date {0} to datetime object".format(str_date))
+            try:
+                value = float(str_value)
+            except Exception as e:
+                raise Exception("Error converting string  value {0} to float bject".format(str_value))
+            output[date] = value
+
+
+
+    #new
+    def mpsv1(self, best_percentage, num_periods):
+
+        try:
+            cf = ScrapeYahooCF()
+            data = {}
+            counter = 1
+            for stock in self.stock_list:
+                print("Working on {0}, {1} / {2}".format(stock, counter, len(self.stock_list)) )
+                str_data = cf.scrape(stock, "Total Cash Flow From Operating Activities")
+                try:
+                    data[stock] = self._convert_str_data(str_data, date_format=)
+                except Exception as e:
+                    print("Error while calculating mps on {0} for date {1}, with error: {2}".format(stock, str_data,e))
+                counter += 1
+
+
+
+        except Exception as e:
+            print("Error: at mpsv1 with error: {0}", e)
+        pass
+
+    #new
     def _calculate_growth_all(self, data):
         """
         Calculates growth ratios for every stock in the input dict
