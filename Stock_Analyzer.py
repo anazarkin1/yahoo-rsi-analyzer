@@ -259,7 +259,7 @@ class StockAnalyzer:
             output[date] = value
 
 
-
+#todo finish
     #new
     def mpsv1(self, best_percentage, num_periods):
 
@@ -271,7 +271,8 @@ class StockAnalyzer:
                 print("Working on {0}, {1} / {2}".format(stock, counter, len(self.stock_list)) )
                 str_data = cf.scrape(stock, "Total Cash Flow From Operating Activities")
                 try:
-                    data[stock] = self._convert_str_data(str_data, date_format=)
+                    #data[stock] = self._convert_str_data(str_data, date_format='YYYY-MM-DD')
+                    data[stock] = self._convert_str_data(str_data)
                 except Exception as e:
                     print("Error while calculating mps on {0} for date {1}, with error: {2}".format(stock, str_data,e))
                 counter += 1
@@ -358,9 +359,10 @@ class StockAnalyzer:
         periods = [{} for i in range(0, maxi - 1)]
 
         for stock_name in data.keys():
-
+#todo test sorting
             i = 0
-            for period in data[stock_name].keys():
+            sorted_dates = get_sorted_dates_array(data[stock_name].keys(),reverse=True)
+            for period in sorted_dates:
                 periods[i][stock_name] = data[stock_name][period]
                 i += 1
 
@@ -371,7 +373,7 @@ class StockAnalyzer:
     def _get_best_consec_periods(self, periods,  best_percentage, num_periods):
         """
 
-        :param data:
+        :param periods:
             format: [
                         {"SN1": ratio2, "SN2": ratio44},
                         {"SN1": ratio1, "SN2": ratio3},
