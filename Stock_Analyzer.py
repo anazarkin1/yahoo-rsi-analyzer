@@ -83,6 +83,9 @@ class StockAnalyzer:
                     print("Error while calculating mps on {0} for date {1}, with error: {2}".format(stock, str_data,e))
                 counter += 1
 
+            growth_data = self._calculate_growth_all(data)
+            periods_data = self._transform_to_periods(growth_data)
+            return self._get_best_consec_periods(periods_data, best_percentage, num_periods)
 
 
         except Exception as e:
@@ -158,7 +161,7 @@ class StockAnalyzer:
         #used to init periods array with enough number of dicts
         maxi = 0
         for i in data.keys():
-            if len(i) > 0:
+            if len(i) > maxi:
                 maxi = len(i)
 
         periods = [{} for i in range(0, maxi - 1)]
