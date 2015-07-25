@@ -60,6 +60,7 @@ class StockAnalyzer:
             except Exception as e:
                 raise Exception("Error converting string  value {0} to float bject".format(str_value))
             output[date] = value
+        return output
 
 
 #todo finish
@@ -72,7 +73,10 @@ class StockAnalyzer:
             counter = 1
             for stock in self.stock_list:
                 print("Working on {0}, {1} / {2}".format(stock, counter, len(self.stock_list)) )
-                str_data = cf.scrape(stock, "Total Cash Flow From Operating Activities")
+                try:
+                    str_data = cf.scrape(stock, "Total Cash Flow From Operating Activities")
+                except Exception as e:
+                    print(e)
                 try:
                     data[stock] = self._convert_str_data(str_data, date_format="%b %d %Y")
                 except Exception as e:
@@ -83,7 +87,6 @@ class StockAnalyzer:
 
         except Exception as e:
             print("Error: at mpsv1 with error: {0}", e)
-        pass
 
     #new
     def _calculate_growth_all(self, data):
