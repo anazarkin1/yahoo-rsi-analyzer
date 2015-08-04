@@ -4,7 +4,7 @@ import math
 from TimeHandler import *
 
 from Yahoo_Parser import *
-from Json_Data_Manager import DataManager
+from JsonDataManager import DataManager
 
 
 from datetime import timedelta
@@ -63,18 +63,23 @@ class StockAnalyzer:
         return output
 
 
-#todo finish
     #new
-    def mpsv1(self, best_percentage, num_periods):
+    def mps(self, best_percentage, num_periods, force_download=False):
 
         try:
             cf = ScrapeYahooCF()
             data = {}
             counter = 1
-            for stock in self.stock_list:
+            cur_param = "Total Cash Flow From Operating Activities"
+            for stock in self.stock_list[:]:
                 print("Working on {0}, {1} / {2}".format(stock, counter, len(self.stock_list)) )
                 try:
-                    str_data = cf.scrape(stock, "Total Cash Flow From Operating Activities")
+                    str_data = self.dm.get(cur_param, stock)
+                    if force_download or (str_data is None):
+                        str_data = cf.scrape(stock, cur_param)
+                        #update json data manager's data object
+                        self.dm.update(cur_param, stock,str_data)
+
                 except Exception as e:
                     print(e)
                 try:
@@ -82,6 +87,8 @@ class StockAnalyzer:
                 except Exception as e:
                     print("Error while calculating mps on {0} for date {1}, with error: {2}".format(stock, str_data,e))
                 counter += 1
+                #save json data manager's data into a file, since updated all stocks
+                self.dm.save_to_disk()
 
             growth_data = self._calculate_growth_all(data)
             periods_data = self._transform_to_periods(growth_data)
@@ -89,7 +96,7 @@ class StockAnalyzer:
 
 
         except Exception as e:
-            print("Error: at mpsv1 with error: {0}", e)
+            print("Error: at mpsv1 with error: {0}".format(e))
 
     #new
     def _calculate_growth_all(self, data):
@@ -167,7 +174,6 @@ class StockAnalyzer:
         periods = [{} for i in range(0, maxi - 1)]
 
         for stock_name in data.keys():
-#todo test sorting
             i = 0
             sorted_dates = get_sorted_dates_array(data[stock_name].keys(),reverse=True)
             for period in sorted_dates:
