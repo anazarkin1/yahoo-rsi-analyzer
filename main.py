@@ -1,6 +1,6 @@
 from Stock_Analyzer import StockAnalyzer
 from TimeHandler import *
-from Json_Data_Manager import DataManager
+from JsonDataManager import DataManager
 from Console import Console
 from Yahoo_Parser import *
 from datetime import *
@@ -13,7 +13,7 @@ def main():
     # print(yp.scrape_stock_price(["AAPL", "T"], "2010-11-11"))
     try:
         #testings:
-        print( sa.mpsv1(0.3,2) )
+        print( sa.mps(0.3,3, False) )
         # print( sa._get_best_consec_periods([{"SN1": 2, "SN2": 3, "SN3": 4},{"SN1":4, "SN3":5},{"SN2": 2}], .3, 2)  )
         # while True:
         #     console.print("To exit type 'exit'")

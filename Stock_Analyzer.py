@@ -68,31 +68,61 @@ class StockAnalyzer:
 
         try:
             cf = ScrapeYahooCF()
-            data = {}
+            hp = ScrapeHistoricalPrices()
+            first_param_data = {}
+            second_param_data={}
             counter = 1
-            cur_param = "Total Cash Flow From Operating Activities"
+            first_param = "Total Cash Flow From Operating Activities"
+            #dates need not to be weekends
+            end_day = datetime.today()
+            #isoweekday returns mon - 1...sun-7
+            if end_day.isoweekday() in [6,7]:
+                end_day = end_day - timedelta(days=2)
+            start_day  = datetime.today() - timedelta(days=31)
+            if start_day.isoweekday() in [6,7]:
+                start_day = start_day - timedelta(days=2)
+
+            start_day_str = get_date_to_string(start_day)
+            end_day_str = get_date_to_string(end_day)
+
+
             for stock in self.stock_list[:]:
                 print("Working on {0}, {1} / {2}".format(stock, counter, len(self.stock_list)) )
                 try:
-                    str_data = self.dm.get(cur_param, stock)
-                    if force_download or (str_data is None):
-                        str_data = cf.scrape(stock, cur_param)
+                    first_param_str_data = self.dm.get(first_param, stock)
+                    if force_download or (first_param_str_data is None):
+                        first_param_str_data = cf.scrape(stock, first_param)
                         #update json data manager's data object
-                        self.dm.update(cur_param, stock,str_data)
+                        self.dm.update(first_param, stock,first_param_str_data)
+
+                    #calculating historical prices return
+                    if stock not in second_param_data:
+                        second_param_data[stock]={}
+
+                    second_param_data[stock][start_day_str] = list(hp.scrape(stock, start_day).values())[0]
+                    second_param_data[stock][end_day_str] = list(hp.scrape(stock, end_day).values())[0]
 
                 except Exception as e:
                     print(e)
                 try:
-                    data[stock] = self._convert_str_data(str_data, date_format="%b %d %Y")
+                    first_param_data[stock] = self._convert_str_data(first_param_str_data, date_format="%b %d %Y")
                 except Exception as e:
-                    print("Error while calculating mps on {0} for date {1}, with error: {2}".format(stock, str_data,e))
+                    print("Error while calculating mps on {0} for date {1}, with error: {2}".format(stock, first_param_str_data,e))
                 counter += 1
-                #save json data manager's data into a file, since updated all stocks
-                self.dm.save_to_disk()
 
-            growth_data = self._calculate_growth_all(data)
+            #save json data manager's data into a file, since updated all stocks
+            self.dm.save_to_disk()
+
+            growth_data = self._calculate_growth_all(first_param_data)
             periods_data = self._transform_to_periods(growth_data)
-            return self._get_best_consec_periods(periods_data, best_percentage, num_periods)
+            first_param_best = self._get_best_consec_periods(periods_data, best_percentage, num_periods)
+
+            growth_data = self._calculate_growth_all(second_param_data)
+            periods_data = self._transform_to_periods(growth_data)
+            second_param_data = self._get_best_consec_periods(periods_data, best_percentage, num_periods=1)
+
+            print("Cashflow best: {0} \nHistorical Prices best: {1}".format(first_param_best, second_param_data))
+
 
 
         except Exception as e:
