@@ -99,8 +99,8 @@ class StockAnalyzer:
                     if stock not in second_param_data:
                         second_param_data[stock]={}
 
-                    second_param_data[stock][start_day_str] = list(hp.scrape(stock, start_day).values())[0]
-                    second_param_data[stock][end_day_str] = list(hp.scrape(stock, end_day).values())[0]
+                    second_param_data[stock][start_day] = list(hp.scrape(stock, start_day).values())[0]
+                    second_param_data[stock][end_day] = list(hp.scrape(stock, end_day).values())[0]
 
                 except Exception as e:
                     print(e)
