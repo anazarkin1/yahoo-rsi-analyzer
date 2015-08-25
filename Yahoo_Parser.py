@@ -59,6 +59,49 @@ class ScrapeMain():
                 data[i] = "-" + data[i]
         return data
 
+class ScrapeYahoo(ScrapeMain):
+    def prepare_url(self, page, quote):
+        return "http://finance.yahoo.com/q/{0}?s={1}".format(page, quote)
+
+    def scrape(self, quote, param):
+        """
+
+        :param quote:
+        :param param:
+        :return:
+            {'date1': 'value1', 'date2': 'value2' ...}
+            #note dates and values are strings
+        """
+        page = self.page
+        url = self.prepare_url(page, quote)
+        r = self.get_request(url)
+        soup = self.get_soup(r.text)
+
+        data = []
+        dates = []
+
+        param_tag = soup.find(text = re.compile(param, re.I))
+        if param_tag is not None:
+            # if it's bold text, it's in <strong></strong> tags, need to go one more level up the dom
+            if param_tag.parent.name == "strong":
+                data = [sib.text.strip().replace(",","") for sib in param_tag.parent.parent.next_siblings]
+            else:
+                data = [sib.text.strip().replace(",","") for sib in param_tag.parent.next_siblings]
+        else:
+            raise Exception("Error: no data found for {0} param {1}".format(quote, param))
+
+        dates_tag = soup.find(text = re.compile("Period Ending"))
+        if dates_tag is not None:
+            dates = [sib.text.strip().replace(",","") for sib in dates_tag.parent.parent.parent.next_siblings]
+        else:
+            raise Exception("Error: no dates found for {0} param {1}".format(quote, param))
+
+        try:
+            data = self.changeNeg(data)
+        except Exception as e:
+            raise Exception("Error: converting data to numeric format, with error:{0}".format(e))
+        return dict(zip(dates, data))
+
 
 class ScrapeYql(ScrapeMain):
     names = {"dividendhistory": "Dividends", "historicaldata": "Close"}
@@ -71,7 +114,7 @@ class ScrapeYql(ScrapeMain):
 
         try:
             # get the friday's data if required date happens to be weekend
-            while required_date.isoweekday() in (6, 7):
+            while required_date.isoweekday() in [6, 7]:
                 # timedelta(1) equals to 1 day
                 required_date -= timedelta(1)
             # Date format used for yql : "YYYY-MM-DD" also called isoformat
@@ -105,65 +148,37 @@ class ScrapeYql(ScrapeMain):
                 return {date_str: jo["query"]["results"]["quote"][tag_name]}
             else:
                 for i in jo["query"]["results"]['quote']:
-                    output[i['Symbol']] =i[tag_name]
+                    output[date_str] =i[tag_name]
         except Exception as e:
             print("Exception Caught: ", e)
-        output["date"]= date_str
+        return output
+
+    def scrape_list(self, quote, list_required_dates):
+        """
+
+        :param quote:
+        :param list_required_dates: [Datetime1, Datetime2...]
+        :return:
+        {'date1':'value1', 'date2':'value2',...}
+        """
+        output = {}
+        for date in list_required_dates:
+            date_res = self.scrape(quote, date)
+            date_str = list(date_res.keys())[0]
+            value_str = list(date_res.values())[0]
+            output[date_str] = value_str
+
         return output
 
 
-class ScrapeHistoricalPrices(ScrapeYql):
+class ScrapeYahooHP(ScrapeYql):
     def __init__(self):
         self.name = "historicaldata"
 
 
-class ScrapeDividendHistory(ScrapeYql):
+class ScrapeYahooDH(ScrapeYql):
     def __init__(self):
         self.name = "dividendhistory"
-
-
-class ScrapeYahoo(ScrapeMain):
-    def prepare_url(self, page, quote):
-        return "http://finance.yahoo.com/q/{0}?s={1}".format(page, quote)
-
-    def scrape(self, quote, param):
-        """
-
-        :param quote:
-        :param param:
-        :return:
-            {'date1': 'value1', 'date2': 'value2' ...}
-            #note dates and values are strings
-        """
-        page = self.page
-        url = self.prepare_url(page, quote)
-        r = self.get_request(url)
-        soup = self.get_soup(r.text)
-
-        data = []
-        dates = []
-
-        param_tag = soup.find(text = re.compile(param, re.I))
-        if param_tag is not None:
-            # if it's bolded text, it's in <strong></strong> tags, need to go one more level up the dom
-            if param_tag.parent.name == "strong":
-                data = [sib.text.strip().replace(",","") for sib in param_tag.parent.parent.next_siblings]
-            else:
-                data = [sib.text.strip().replace(",","") for sib in param_tag.parent.next_siblings]
-        else:
-            raise Exception("Error: no data found for {0} param {1}".format(quote, param))
-
-        dates_tag = soup.find(text = re.compile("Period Ending"))
-        if dates_tag is not None:
-            dates = [sib.text.strip().replace(",","") for sib in dates_tag.parent.parent.parent.next_siblings]
-        else:
-            raise Exception("Error: no dates found for {0} param {1}".format(quote, param))
-
-        try:
-            data = self.changeNeg(data)
-        except Exception as e:
-            raise Exception("Error: converting data to numeric format, with error:{0}".format(e))
-        return dict(zip(dates, data))
 
 
 class ScrapeYahooKS(ScrapeYahoo):
@@ -213,7 +228,6 @@ class ScrapeYahooCF(ScrapeYahoo):
 class ScrapeYahooIS(ScrapeYahoo):
     def __init__(self):
         self.page = 'is'
-
 
 
 
