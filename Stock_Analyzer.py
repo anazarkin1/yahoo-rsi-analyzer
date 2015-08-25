@@ -64,66 +64,64 @@ class StockAnalyzer:
 
 
     #new
-    def mps(self, best_percentage, num_periods, force_download=False):
+    def mps(self, best_percentage, num_periods, num_periods_prices, param , page,interval=1,force_download=False):
 
         try:
-            cf = ScrapeYahooCF()
-            hp = ScrapeHistoricalPrices()
-            first_param_data = {}
-            second_param_data={}
+            #days interval betweeen data points to analyze
+            interval = int(interval)
+
+            #instantiate a scraper according to page
+            page = page.upper()
+            scraper_class = globals()["ScrapeYahoo{0}".format(page)]
+            scraper = scraper_class()
+
+
+            param = str(param)
+            param_data = {}
             counter = 1
-            first_param = "Total Cash Flow From Operating Activities"
-            #dates need not to be weekends
-            end_day = datetime.today()
-            #isoweekday returns mon - 1...sun-7
-            if end_day.isoweekday() in [6,7]:
-                end_day = end_day - timedelta(days=2)
-            start_day  = datetime.today() - timedelta(days=31)
-            if start_day.isoweekday() in [6,7]:
-                start_day = start_day - timedelta(days=2)
 
-            start_day_str = get_date_to_string(start_day)
-            end_day_str = get_date_to_string(end_day)
+            end_day = datetime(month=datetime.today().month -1, day=28, year=datetime.today().year)
 
+
+            list_required_dates = [end_day]
+            for i in range(1, num_periods_prices):
+                list_required_dates.append(list_required_dates[-1] - timedelta(days= interval))
 
             for stock in self.stock_list[:]:
                 print("Working on {0}, {1} / {2}".format(stock, counter, len(self.stock_list)) )
                 try:
-                    first_param_str_data = self.dm.get(first_param, stock)
-                    if force_download or (first_param_str_data is None):
-                        first_param_str_data = cf.scrape(stock, first_param)
-                        #update json data manager's data object
-                        self.dm.update(first_param, stock,first_param_str_data)
+                    param_str_data={}
 
-                    #calculating historical prices return
-                    if stock not in second_param_data:
-                        second_param_data[stock]={}
+                    #only for params that are reported every day, that we get from yql
+                    if param.lower() in {"historical prices", "dividend history"}:
+                        param_str_data = scraper.scrape_list(stock, list_required_dates)
 
-                    second_param_data[stock][start_day] = list(hp.scrape(stock, start_day).values())[0]
-                    second_param_data[stock][end_day] = list(hp.scrape(stock, end_day).values())[0]
+                    #params from the html parsing, reported quaterly
+                    else:
+                        param_str_data = self.dm.get(param, stock)
+                        if force_download or (param_str_data is None):
+                            param_str_data = scraper.scrape(stock, param)
+                            # update json data manager's data object
+                            self.dm.update(param, stock, param_str_data)
 
                 except Exception as e:
                     print(e)
+
                 try:
-                    first_param_data[stock] = self._convert_str_data(first_param_str_data, date_format="%b %d %Y")
+                    param_data[stock] = self._convert_str_data(param_str_data, date_format="%b %d %Y")
                 except Exception as e:
-                    print("Error while calculating mps on {0} for date {1}, with error: {2}".format(stock, first_param_str_data,e))
+                    print("Error while calculating mps on {0} for date {1}, with error: {2}".format(stock, param_str_data,e))
                 counter += 1
 
             #save json data manager's data into a file, since updated all stocks
             self.dm.save_to_disk()
 
-            growth_data = self._calculate_growth_all(first_param_data)
+            growth_data = self._calculate_growth_all(param_data)
             periods_data = self._transform_to_periods(growth_data)
-            first_param_best = self._get_best_consec_periods(periods_data, best_percentage, num_periods)
+            param_best = self._get_best_consec_periods(periods_data, best_percentage, num_periods)
 
-            growth_data = self._calculate_growth_all(second_param_data)
-            periods_data = self._transform_to_periods(growth_data)
-            second_param_data = self._get_best_consec_periods(periods_data, best_percentage, num_periods=1)
-
-            print("Cashflow best: {0} \nHistorical Prices best: {1}".format(first_param_best, second_param_data))
-
-
+            print("{0} best: {1}".format(param, param_best))
+            return param_best
 
         except Exception as e:
             print("Error: at mpsv1 with error: {0}".format(e))
@@ -201,12 +199,12 @@ class StockAnalyzer:
             if len(i) > maxi:
                 maxi = len(i)
 
-        periods = [{} for i in range(0, maxi - 1)]
+        periods = [{} for i in range(0, maxi)]
 
         for stock_name in data.keys():
             i = 0
             sorted_dates = get_sorted_dates_array(data[stock_name].keys(),reverse=True)
-            for period in sorted_dates:
+            for period in sorted_dates[:maxi]:
                 periods[i][stock_name] = data[stock_name][period]
                 i += 1
 
@@ -227,13 +225,12 @@ class StockAnalyzer:
         :param num_periods:
         :return:
         """
-        if len(periods) < num_periods:
-            raise Exception("***Not enough periods data passed to calculate best consec periods, passed {0} need {1}".format(len(periods), num_periods))
-        else:
-            num_periods = int(num_periods)
+        # if len(periods) < num_periods:
+        #     raise Exception("***Not enough periods data passed to calculate best consec periods, passed {0} need {1}".format(len(periods), num_periods))
+        # else:
+        #     num_periods = int(num_periods)
         best_percentage = float(best_percentage)
 
-        #tuple
         candidates = [x[0] for x in sorted( periods[0].items(), key = itemgetter(1), reverse = True ) ]
 
         #only need best_percentage of them
