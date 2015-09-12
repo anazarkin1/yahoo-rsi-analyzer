@@ -160,7 +160,7 @@ class StockAnalyzer:
                         if stock not in output.keys():
                             output[stock] = {}
 
-                        output[stock][date_end] = round( (value_end - value_start) / value_start, self.decimal_places)
+                        output[stock][date_end] = round( (value_end - value_start) / abs(value_start), self.decimal_places)
                     else:
                         print("Error: division by zero at calculating growth for {0} on dates {1}, {2}".format(stock,str(date_end), str(date_start)) )
                         break;
