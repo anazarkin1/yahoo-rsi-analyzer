@@ -10,7 +10,7 @@ class DataManager:
         self.load_all_cashflow()
         self._data_prices=""
 
-    def load_all_cashflow(self, filename="Data/cashflow.json"):
+    def load_all_cashflow(self, filename="Data/data.json"):
         try:
             with open(filename) as file:
                 self._data_cashflow = json.load(file)

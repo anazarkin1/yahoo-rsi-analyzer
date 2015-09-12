@@ -13,8 +13,7 @@ def main():
     # print(yp.scrape_stock_price(["AAPL", "T"], "2010-11-11"))
     try:
         #testings:
-        print( sa.mps(0.3,3, False) )
-        # print( sa._get_best_consec_periods([{"SN1": 2, "SN2": 3, "SN3": 4},{"SN1":4, "SN3":5},{"SN2": 2}], .3, 2)  )
+        print( sa.mps(0.3,3, 6, "Total Cash Flows From Investing Activities", "cf",interval=30, force_download= False) )
         # while True:
         #     console.print("To exit type 'exit'")
         #     console.print("Type number from below:")
