@@ -3,7 +3,7 @@ import math
 
 from TimeHandler import *
 
-from Yahoo_Parser import *
+from YahooParser import *
 from JsonDataManager import DataManager
 
 
